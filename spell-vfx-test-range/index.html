@@ -44,7 +44,8 @@ scene.background = new THREE.Color(0x030817);
 scene.fog = new THREE.FogExp2(0x07111f, 0.022);
 
 const camera = new THREE.PerspectiveCamera(44, innerWidth/innerHeight, 0.05, 80);
-camera.position.set(11,7,14);
+camera.position.set(11,7,14);scene.add(camera);
+const cameraMoon=new THREE.Group();cameraMoon.position.set(-8.3,5.8,-24);camera.add(cameraMoon);const cameraMoonBody=new THREE.Mesh(new THREE.SphereGeometry(1.35,32,20),new THREE.MeshBasicMaterial({color:0xddeaff,transparent:true,opacity:.94}));cameraMoon.add(cameraMoonBody);const cameraMoonGlow=new THREE.Mesh(new THREE.SphereGeometry(2.0,24,16),new THREE.MeshBasicMaterial({color:0x9ebeff,transparent:true,opacity:.07,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide}));cameraMoon.add(cameraMoonGlow);
 
 const renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -62,6 +63,8 @@ const rim = new THREE.DirectionalLight(0x8ecbff, 2.35);
 rim.position.set(-7,9,-7); rim.castShadow=true; rim.shadow.mapSize.set(1024,1024);
 rim.shadow.camera.left=-12; rim.shadow.camera.right=12; rim.shadow.camera.top=12; rim.shadow.camera.bottom=-12;
 scene.add(rim);
+const ambientFill=new THREE.AmbientLight(0x10203c,.34);scene.add(ambientFill);
+const frontFill=new THREE.DirectionalLight(0x7197c4,.92);frontFill.position.set(9,10,13);scene.add(frontFill);
 
 // ----- Night sky -----
 const starGeom = new THREE.BufferGeometry();
@@ -236,8 +239,8 @@ const fireballs=[];for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.Icosahe
 // STAGE 6 — THREE PROCEDURAL MATERIAL SPHERES
 // ============================================================
 const pedestalGroup=new THREE.Group();scene.add(pedestalGroup);
-const pedMat=new THREE.MeshPhysicalMaterial({color:0x514b48,roughness:.72,metalness:.03,clearcoat:.15,clearcoatRoughness:.65});
-const pedTrimMat=new THREE.MeshStandardMaterial({color:0x7f6038,roughness:.42,metalness:.58,emissive:0x241207,emissiveIntensity:.22});
+const pedMat=new THREE.MeshPhysicalMaterial({color:0x625955,roughness:.68,metalness:.03,clearcoat:.18,clearcoatRoughness:.58});
+const pedTrimMat=new THREE.MeshStandardMaterial({color:0x9a7140,roughness:.38,metalness:.62,emissive:0x3b1c08,emissiveIntensity:.42});
 const pedDarkMat=new THREE.MeshStandardMaterial({color:0x202326,roughness:.83,metalness:.04});
 const pedestalObjects=[];
 function makePedIcon(type,color){const pts=[];if(type===0){for(let i=0;i<40;i++){const a=i/39*Math.PI*4,r=.05+.018*i;pts.push(new THREE.Vector3(Math.cos(a)*r,Math.sin(a)*r,0));}}else if(type===1){pts.push(new THREE.Vector3(0,-.23,0),new THREE.Vector3(-.14,-.04,0),new THREE.Vector3(-.05,.12,0),new THREE.Vector3(.01,.28,0),new THREE.Vector3(.10,.11,0),new THREE.Vector3(.18,-.03,0),new THREE.Vector3(.08,-.24,0),new THREE.Vector3(0,-.23,0));}else{for(let k=0;k<6;k++){const a=k*Math.PI/3;pts.push(new THREE.Vector3(0,0,0),new THREE.Vector3(Math.cos(a)*.26,Math.sin(a)*.26,0));const p=new THREE.Vector3(Math.cos(a)*.17,Math.sin(a)*.17,0),b=a+.55,c=a-.55;pts.push(p.clone(),p.clone().add(new THREE.Vector3(Math.cos(b)*.08,Math.sin(b)*.08,0)));pts.push(p.clone(),p.clone().add(new THREE.Vector3(Math.cos(c)*.08,Math.sin(c)*.08,0)));}}const g=new THREE.BufferGeometry().setFromPoints(pts);return new THREE.LineSegments(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false}));}
@@ -377,7 +380,7 @@ const chestRing=new THREE.Mesh(new THREE.TorusGeometry(.43,.038,10,54),new THREE
 
 
 
-const torchFX=[];for(const [x,z] of [[3.25,-5.08],[7.75,-5.08],[-7.55,-3.95]]){const g=new THREE.Group();g.position.set(x,1.05,z);const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.13,.18,.18,8),pedTrimMat);g.add(bowl);const flame=new THREE.Mesh(new THREE.IcosahedronGeometry(.18,2),new THREE.MeshBasicMaterial({color:0xff8b2b,transparent:true,opacity:.8,blending:THREE.AdditiveBlending}));flame.position.y=.28;g.add(flame);const light=new THREE.PointLight(0xff7a2b,3.2,4.5,2);light.position.y=.35;g.add(light);scene.add(g);torchFX.push({g,flame,light});}
+const torchFX=[];for(const [x,z] of [[3.25,-5.08],[7.75,-5.08],[-7.55,-3.95]]){const g=new THREE.Group();g.position.set(x,1.05,z);const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.13,.18,.18,8),pedTrimMat);g.add(bowl);const flame=new THREE.Mesh(new THREE.IcosahedronGeometry(.18,2),new THREE.MeshBasicMaterial({color:0xff8b2b,transparent:true,opacity:.8,blending:THREE.AdditiveBlending}));flame.position.y=.28;g.add(flame);const light=new THREE.PointLight(0xff7a2b,5.0,5.5,2);light.position.y=.35;g.add(light);scene.add(g);torchFX.push({g,flame,light});}
 const blastCloud=[];for(let i=0;i<12;i++){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),new THREE.MeshBasicMaterial({color:i%3===0?0xfff0a0:(i%2?0xffa127:0xff5715),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));m.position.copy(explosionOrigin);scene.add(m);blastCloud.push({m,dir:new THREE.Vector3(randRange(-1,1),randRange(-.5,1),randRange(-1,1)).normalize(),phase:rand()});}
 // Layered ice cores and animated frost motes.
 const iceCoreMat=new THREE.MeshBasicMaterial({color:0xbfeaff,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false});
@@ -394,8 +397,13 @@ const waterRingMat=new THREE.MeshBasicMaterial({color:0x37d8ff,transparent:true,
 for(let i=0;i<5;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(.26+i*.075,.018,6,48),waterRingMat.clone());r.rotation.set(Math.PI/2+i*.18,i*.42,i*.2);waterFX.add(r);}
 const waterDropGeom=new THREE.SphereGeometry(.035,8,6),waterDrops=new THREE.InstancedMesh(waterDropGeom,new THREE.MeshBasicMaterial({color:0x69e7ff,transparent:true,opacity:.9,blending:THREE.AdditiveBlending}),26);waterFX.add(waterDrops);const wd=new THREE.Object3D();
 
+
+const waterSpiralPts=[];for(let i=0;i<70;i++){const q=i/69,a=q*Math.PI*4.8,r=.53*(1-q*.72);waterSpiralPts.push(new THREE.Vector3(Math.cos(a)*r,(q-.5)*.22+Math.sin(a*2)*.03,Math.sin(a)*r));}
+const waterSpiral=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(waterSpiralPts),120,.026,6,false),new THREE.MeshBasicMaterial({color:0x8beaff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));waterFX.add(waterSpiral);
+const waterCore=new THREE.Mesh(new THREE.SphereGeometry(.28,24,16),new THREE.MeshBasicMaterial({color:0x087dff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));waterFX.add(waterCore);
+
 const fireFX=new THREE.Group();fireFX.position.copy(fireSphere.position);scene.add(fireFX);const fireLobes=[];
-for(let i=0;i<7;i++){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(.34,2),new THREE.MeshBasicMaterial({color:i%2?0xffc33a:0xff5f12,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));fireFX.add(m);fireLobes.push(m);}
+for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(.34,2),new THREE.MeshBasicMaterial({color:i%3===0?0xffff9b:(i%2?0xffbd2f:0xff5712),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));fireFX.add(m);fireLobes.push(m);}
 const fireSparkGeom=new THREE.BufferGeometry(),fireSparkBase=[];for(let i=0;i<55;i++)fireSparkBase.push({a:rand()*Math.PI*2,r:randRange(.1,.55),y:randRange(-.1,1.1),s:randRange(.6,1.6)});fireSparkGeom.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(55*3),3));const fireSparkMat=new THREE.PointsMaterial({color:0xffb040,size:.045,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const fireSparkPts=new THREE.Points(fireSparkGeom,fireSparkMat);fireFX.add(fireSparkPts);
 
 const iceFX=new THREE.Group();iceFX.position.copy(iceSphere.position);scene.add(iceFX);const iceCrackMat=new THREE.MeshBasicMaterial({color:0xcaf4ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const iceCracks=[];
@@ -407,14 +415,14 @@ const cameraCurve=new THREE.CatmullRomCurve3([
   new THREE.Vector3(12.7,6.6,10.2),
   new THREE.Vector3(12.4,6.0,7.3),
   new THREE.Vector3(11.1,5.6,6.4),
-  new THREE.Vector3(9.5,5.4,8.1)
+  new THREE.Vector3(10.9,5.8,9.6)
 ],false,'catmullrom',.55);
 const aimCurve=new THREE.CatmullRomCurve3([
   new THREE.Vector3(-1.8,1.0,.8),
   new THREE.Vector3(-1.0,1.8,.4),
   new THREE.Vector3(2.8,2.0,-.5),
   new THREE.Vector3(4.0,2.0,-1.0),
-  new THREE.Vector3(2.6,1.25,-3.35)
+  new THREE.Vector3(1.75,1.25,-2.75)
 ],false,'catmullrom',.55);
 
 
@@ -422,7 +430,7 @@ const postTarget=new THREE.WebGLRenderTarget(Math.max(1,innerWidth*renderer.getP
 postTarget.texture.colorSpace=THREE.SRGBColorSpace;
 const postScene=new THREE.Scene(),postCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
 const postVertex='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}';
-const postFrag='precision highp float;uniform sampler2D tScene;uniform vec2 uResolution;uniform float uTime;varying vec2 vUv;float lum(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}float hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}void main(){vec2 px=1.0/uResolution;vec3 c=texture2D(tScene,vUv).rgb;vec3 b=vec3(0.0);vec2 o1=px*2.2;vec2 o2=px*4.5;vec3 s1=texture2D(tScene,vUv+vec2(o1.x,0)).rgb;vec3 s2=texture2D(tScene,vUv-vec2(o1.x,0)).rgb;vec3 s3=texture2D(tScene,vUv+vec2(0,o1.y)).rgb;vec3 s4=texture2D(tScene,vUv-vec2(0,o1.y)).rgb;vec3 s5=texture2D(tScene,vUv+o2).rgb;vec3 s6=texture2D(tScene,vUv-o2).rgb;vec3 s7=texture2D(tScene,vUv+vec2(o2.x,-o2.y)).rgb;vec3 s8=texture2D(tScene,vUv+vec2(-o2.x,o2.y)).rgb;b=(s1+s2+s3+s4)*.13+(s5+s6+s7+s8)*.12;float m=smoothstep(.62,1.25,lum(b));c+=b*m*.52;float l=lum(c);c=mix(vec3(l),c,1.13);c=pow(max(c,0.0),vec3(.94));c.r+=smoothstep(.6,1.3,l)*.035;c.b+=smoothstep(.05,.42,.5-l)*.018;float vig=1.0-smoothstep(.32,.79,distance(vUv,vec2(.5)));c*=mix(.76,1.0,vig);c+=(hash21(vUv*uResolution+uTime*17.0)-.5)*.018;gl_FragColor=vec4(c,1.0);}';
+const postFrag='precision highp float;uniform sampler2D tScene;uniform vec2 uResolution;uniform float uTime;varying vec2 vUv;float lum(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}float hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}void main(){vec2 px=1.0/uResolution;vec3 c=texture2D(tScene,vUv).rgb;vec3 b=vec3(0.0);vec2 o1=px*2.2;vec2 o2=px*4.5;vec3 s1=texture2D(tScene,vUv+vec2(o1.x,0)).rgb;vec3 s2=texture2D(tScene,vUv-vec2(o1.x,0)).rgb;vec3 s3=texture2D(tScene,vUv+vec2(0,o1.y)).rgb;vec3 s4=texture2D(tScene,vUv-vec2(0,o1.y)).rgb;vec3 s5=texture2D(tScene,vUv+o2).rgb;vec3 s6=texture2D(tScene,vUv-o2).rgb;vec3 s7=texture2D(tScene,vUv+vec2(o2.x,-o2.y)).rgb;vec3 s8=texture2D(tScene,vUv+vec2(-o2.x,o2.y)).rgb;b=(s1+s2+s3+s4)*.13+(s5+s6+s7+s8)*.12;float m=smoothstep(.62,1.25,lum(b));c+=b*m*.52;float l=lum(c);c=mix(vec3(l),c,1.13);c=pow(max(c,0.0),vec3(.94));c.r+=smoothstep(.6,1.3,l)*.035;c.b+=smoothstep(.05,.42,.5-l)*.018;c+=vec3(.018,.024,.038)*(1.0-smoothstep(.14,.58,l));float vig=1.0-smoothstep(.32,.82,distance(vUv,vec2(.5)));c*=mix(.86,1.0,vig);c+=(hash21(vUv*uResolution+uTime*17.0)-.5)*.018;gl_FragColor=vec4(c,1.0);}';
 const postMat=new THREE.ShaderMaterial({uniforms:{tScene:{value:postTarget.texture},uResolution:{value:new THREE.Vector2(postTarget.width,postTarget.height)},uTime:{value:0}},vertexShader:postVertex,fragmentShader:postFrag,depthWrite:false,depthTest:false,toneMapped:false});
 const postQuad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),postMat);postScene.add(postQuad);
 
@@ -436,10 +444,10 @@ function updateCinematic(t){
   windGlowTubes.forEach((w,i)=>{w.material.opacity=.12*lp;w.rotation.y=t*.05*(i%2?1:-1);});
   moltenCracks.forEach((m,i)=>m.material.opacity=(.22+.12*Math.sin(t*4+i))*cond);chestRune.material.opacity=.45+.28*cond;
   const fq=frostGeom.attributes.position, fly=smooth(8.8,10.65,t), head=iceOrigin.clone().lerp(iceTarget,fly);for(let i=0;i<frostBase.length;i++){const d=frostBase[i],q=(d.p+t*.22)%1;fq.setXYZ(i,head.x+d.o.x*(1-q),head.y+d.o.y*(1-q),head.z+d.o.z*(1-q));}fq.needsUpdate=true;frostMat.opacity=.55*cond*(1-smooth(11.3,12,t));
-  torchFX.forEach((q,i)=>{q.flame.scale.set(.82+Math.sin(t*8+i)*.08,1.15+Math.sin(t*10+i)*.16,.82);q.light.intensity=2.7+.65*Math.sin(t*9+i);});
+  torchFX.forEach((q,i)=>{q.flame.scale.set(.82+Math.sin(t*8+i)*.08,1.15+Math.sin(t*10+i)*.16,.82);q.light.intensity=4.3+.9*Math.sin(t*9+i);});
   const dt=t-11.05, blast=dt>0?Math.exp(-dt*2.6):0;blastRays.forEach((r,i)=>r.material.opacity=.68*blast*(1-i/blastRays.length*.3));blastCore.scale.setScalar(.3+Math.max(0,dt)*2.5);blastCore.material.opacity=dt>0?.72*Math.exp(-dt*4.4):0;blastCloud.forEach((q,i)=>{if(dt<=0){q.m.material.opacity=0;return;}const tt=Math.max(0,dt-q.phase*.08);q.m.position.copy(explosionOrigin).addScaledVector(q.dir,tt*(1.5+i*.04));q.m.scale.setScalar(.16+tt*(1.6+i*.08));q.m.material.opacity=.42*Math.exp(-tt*(2.5+q.phase));});
-  waterFX.scale.setScalar(reveal);waterFX.visible=BUILD_STAGE>=6;waterFX.children.forEach((o,i)=>{if(o.material?.opacity!==undefined)o.material.opacity=.32*reveal*(.8+.2*Math.sin(t*2+i));o.rotation.z+=0.0015*(i+1);});for(let i=0;i<26;i++){const a=i/26*Math.PI*2+t*(.45+(i%4)*.05),r=.48+.08*Math.sin(i*2.4+t);wd.position.set(Math.cos(a)*r,.15*Math.sin(a*2+t)+.05,Math.sin(a)*r);wd.scale.setScalar(reveal*(.7+.3*Math.sin(i+t)));wd.updateMatrix();waterDrops.setMatrixAt(i,wd.matrix);}waterDrops.instanceMatrix.needsUpdate=true;
-  fireFX.scale.setScalar(reveal);fireFX.visible=BUILD_STAGE>=6;fireLobes.forEach((m,i)=>{const a=i/fireLobes.length*Math.PI*2+t*.35;m.position.set(Math.cos(a)*.18,.06+i*.055+Math.sin(t*3+i)*.06,Math.sin(a)*.18);m.scale.set(.7,.9+i*.08,.7);m.material.opacity=.13*reveal;});const fs=fireSparkGeom.attributes.position;for(let i=0;i<fireSparkBase.length;i++){const d=fireSparkBase[i],yy=(d.y+t*.22*d.s)%1.25;fs.setXYZ(i,Math.cos(d.a+t*.5)*d.r,yy-.1,Math.sin(d.a+t*.5)*d.r);}fs.needsUpdate=true;fireSparkMat.opacity=.8*reveal;
+  waterFX.scale.setScalar(reveal);waterFX.visible=BUILD_STAGE>=6;waterFX.children.forEach((o,i)=>{if(o.material?.opacity!==undefined)o.material.opacity=.42*reveal*(.82+.18*Math.sin(t*2+i));o.rotation.z+=0.0015*(i+1);});waterSpiral.material.opacity=.78*reveal;waterSpiral.rotation.y=t*.7;waterSpiral.rotation.z=.25*Math.sin(t*.8);waterCore.material.opacity=.28*reveal;for(let i=0;i<26;i++){const a=i/26*Math.PI*2+t*(.45+(i%4)*.05),r=.48+.08*Math.sin(i*2.4+t);wd.position.set(Math.cos(a)*r,.15*Math.sin(a*2+t)+.05,Math.sin(a)*r);wd.scale.setScalar(reveal*(.7+.3*Math.sin(i+t)));wd.updateMatrix();waterDrops.setMatrixAt(i,wd.matrix);}waterDrops.instanceMatrix.needsUpdate=true;
+  fireFX.scale.setScalar(reveal);fireFX.visible=BUILD_STAGE>=6;fireLobes.forEach((m,i)=>{const q=i/(fireLobes.length-1),a=i/fireLobes.length*Math.PI*2+t*.28;m.position.set(Math.cos(a)*(.19*(1-q)),.02+q*.58+Math.sin(t*3+i)*.045,Math.sin(a)*(.19*(1-q)));m.scale.set(.76*(1-q*.32),1.05+q*.82,.76*(1-q*.32));m.material.opacity=(.28+.18*(1-q))*reveal;});const fs=fireSparkGeom.attributes.position;for(let i=0;i<fireSparkBase.length;i++){const d=fireSparkBase[i],yy=(d.y+t*.22*d.s)%1.25;fs.setXYZ(i,Math.cos(d.a+t*.5)*d.r,yy-.1,Math.sin(d.a+t*.5)*d.r);}fs.needsUpdate=true;fireSparkMat.opacity=.8*reveal;
   iceFX.scale.setScalar(reveal);iceFX.visible=BUILD_STAGE>=6;iceCracks.forEach((m,i)=>m.material.opacity=(.45+.35*Math.sin(t*.8+i))*reveal);
 }
 
@@ -501,9 +509,9 @@ function updateExplosion(t){
 
 function updateSpheres(t){
   const enabled=BUILD_STAGE>=6; pedestalGroup.visible=enabled;[waterSphere,fireSphere,iceSphere,waterSphere.userData.halo,fireSphere.userData.halo,iceSphere.userData.halo].forEach(o=>o.visible=enabled);[waterLight,fireLight,iceLight].forEach(l=>l.visible=enabled);if(!enabled)return;
-  const p=smooth(13.1,15.2,t);pedestalGroup.scale.setScalar(1);[waterSphere,fireSphere,iceSphere].forEach((s,i)=>{s.material.uniforms.uTime.value=t;s.material.uniforms.uReveal.value=p;s.userData.halo.material.opacity=.07*p*(.65+.35*Math.sin(t*2+i));});
-  waterSphere.rotation.y=t*.5;fireSphere.rotation.y=-t*.62;iceSphere.rotation.y=t*.22;fireSphere.scale.set(.82*(.97+.04*Math.sin(t*4)),1.22*(1+.045*Math.sin(t*5.3)),.82*(.97+.04*Math.cos(t*4.4)));
-  waterLight.intensity=15*p;fireLight.intensity=18*p*(.8+.2*Math.sin(t*7));iceLight.intensity=13*p;
+  const p=smooth(13.1,15.2,t);pedestalGroup.scale.setScalar(1);[waterSphere,fireSphere,iceSphere].forEach((s,i)=>{s.material.uniforms.uTime.value=t;s.material.uniforms.uReveal.value=(s===fireSphere?p*.22:p);s.userData.halo.material.opacity=.07*p*(.65+.35*Math.sin(t*2+i));});
+  waterSphere.rotation.y=t*.5;fireSphere.rotation.y=-t*.62;iceSphere.rotation.y=t*.22;fireSphere.scale.set(.54*(.97+.04*Math.sin(t*4)),.78*(1+.045*Math.sin(t*5.3)),.54*(.97+.04*Math.cos(t*4.4)));
+  waterLight.intensity=19*p;fireLight.intensity=23*p*(.8+.2*Math.sin(t*7));iceLight.intensity=17*p;
 }
 
 function frame(now){
