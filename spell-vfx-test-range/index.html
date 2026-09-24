@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Procedural Spell VFX Test Range</title>
+<style>
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020611;font-family:Inter,system-ui,sans-serif}
+  canvas{display:block;width:100%;height:100%}
+  #hud{position:fixed;left:18px;top:16px;color:#d9f4ff;font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.78;pointer-events:none;text-shadow:0 1px 8px #000}
+  #replay{position:fixed;right:18px;bottom:18px;border:1px solid #65d7e8;background:rgba(3,14,28,.55);color:#dffcff;border-radius:999px;padding:10px 16px;backdrop-filter:blur(8px);cursor:pointer;font:600 12px/1 system-ui;letter-spacing:.08em;text-transform:uppercase}
+  #replay:hover{background:rgba(10,35,50,.72)}
+  body:not(.debug) #hud{display:none}
+</style>
+</head>
+<body>
+<div id="hud">Spell VFX Test Range</div><button id="replay">Replay</button>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+
+// ------------------------------------------------------------
+// USER-TUNABLE SEED: changes runes, leaf paths, mist and debris.
+// ------------------------------------------------------------
+const SEED = 43127;
+window.SEED = SEED;
+
+const params = new URLSearchParams(location.search);
+const BUILD_STAGE = Math.max(1, Math.min(6, +(params.get('stage') || 6)));
+const freezeParam = params.get('t');
+let forcedTime = freezeParam !== null ? +freezeParam : null;
+if (params.get('debug') === '1') document.body.classList.add('debug');
+
+let seedState = SEED >>> 0;
+function rand(){ seedState = (1664525 * seedState + 1013904223) >>> 0; return seedState / 4294967296; }
+function randRange(a,b){ return a + (b-a)*rand(); }
+function smooth(a,b,x){ x = THREE.MathUtils.clamp((x-a)/(b-a),0,1); return x*x*(3-2*x); }
+function clamp01(x){ return THREE.MathUtils.clamp(x,0,1); }
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x020611);
+scene.fog = new THREE.FogExp2(0x030813, 0.027);
+
+const camera = new THREE.PerspectiveCamera(44, innerWidth/innerHeight, 0.05, 80);
+camera.position.set(11,7,14);
+
+const renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const hemi = new THREE.HemisphereLight(0x0d214a, 0x08070a, 0.16);
+scene.add(hemi);
+const rim = new THREE.DirectionalLight(0x72baff, 2.2);
+rim.position.set(-7,9,-7); rim.castShadow=true; rim.shadow.mapSize.set(1024,1024);
+rim.shadow.camera.left=-12; rim.shadow.camera.right=12; rim.shadow.camera.top=12; rim.shadow.camera.bottom=-12;
+scene.add(rim);
+
+// ----- Night sky -----
+const starGeom = new THREE.BufferGeometry();
+const starPos=[];
+for(let i=0;i<1600;i++){
+  const th=randRange(0,Math.PI*2), u=randRange(0.08,0.98), r=randRange(26,45);
+  const ph=Math.acos(THREE.MathUtils.lerp(0.05,0.95,u));
+  starPos.push(Math.cos(th)*Math.sin(ph)*r, Math.cos(ph)*r+8, Math.sin(th)*Math.sin(ph)*r);
+}
+starGeom.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));
+const stars=new THREE.Points(starGeom,new THREE.PointsMaterial({color:0xbfd8ff,size:.055,sizeAttenuation:true,transparent:true,opacity:.9,depthWrite:false}));
+scene.add(stars);
+
+// ----- Circular stone arena -----
+const arena = new THREE.Group(); scene.add(arena);
+const baseMat = new THREE.MeshStandardMaterial({color:0x131927,roughness:.95,metalness:.02});
+const base = new THREE.Mesh(new THREE.CylinderGeometry(10.2,10.6,.8,96),baseMat); base.position.y=-.48;base.receiveShadow=true;arena.add(base);
+const slabMats=[0x171e2b,0x1c2431,0x121925,0x202632].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.92,metalness:.03}));
+for(let i=0;i<125;i++){
+  const r=Math.sqrt(rand())*9.55, a=rand()*Math.PI*2;
+  const g=new THREE.DodecahedronGeometry(randRange(.42,.8),0);
+  const m=new THREE.Mesh(g,slabMats[(rand()*slabMats.length)|0]);
+  m.scale.set(randRange(1.1,2.0),randRange(.08,.16),randRange(.8,1.45));
+  m.position.set(Math.cos(a)*r,randRange(-.02,.08),Math.sin(a)*r);
+  m.rotation.set(randRange(-.05,.05),rand()*Math.PI,randRange(-.05,.05));
+  m.castShadow=true;m.receiveShadow=true;arena.add(m);
+}
+const outerRing=new THREE.Mesh(new THREE.TorusGeometry(10.05,.22,10,128),new THREE.MeshStandardMaterial({color:0x2c3441,roughness:.82}));
+outerRing.rotation.x=Math.PI/2; outerRing.position.y=.13; outerRing.castShadow=true; arena.add(outerRing);
+
+// cracks: short dark line scars on floor
+const crackMat = new THREE.LineBasicMaterial({color:0x05080e,transparent:true,opacity:.85});
+for(let i=0;i<46;i++){
+  const pts=[]; let rr=randRange(1,9), a=randRange(0,Math.PI*2), x=Math.cos(a)*rr,z=Math.sin(a)*rr;
+  pts.push(new THREE.Vector3(x,.15,z));
+  for(let j=0;j<randRange(2,5);j++){ x+=randRange(-.5,.5);z+=randRange(-.5,.5);pts.push(new THREE.Vector3(x,.15,z)); }
+  const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),crackMat); arena.add(ln);
+}
+
+// ----- Ruined arch / walls -----
+const ruinMat=new THREE.MeshStandardMaterial({color:0x222733,roughness:.94});
+function addBlock(x,y,z,sx,sy,sz,ry=0){ const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),ruinMat);m.position.set(x,y,z);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;scene.add(m);return m; }
+addBlock(7.5,1.6,-5.7,1.25,3.2,1.25,.08); addBlock(3.4,1.8,-6.0,1.15,3.6,1.15,-.1); addBlock(5.45,3.45,-5.9,5.1,.7,1.05,.02);
+addBlock(-7.5,1.1,-4.5,1.15,2.2,1.15,.2); addBlock(-8.7,.5,-2.7,2.6,1.0,1.0,-.45);
+for(let i=0;i<16;i++) addBlock(randRange(-9,9),randRange(.15,.35),randRange(-8.2,-6.7),randRange(.45,1.2),randRange(.3,.7),randRange(.5,1.1),randRange(-.5,.5));
+
+// procedural ivy ribbons
+const vineMat=new THREE.MeshStandardMaterial({color:0x173522,roughness:.9});
+for(let k=0;k<7;k++){
+  const pts=[]; const x=randRange(3.2,7.9), z=-5.25+randRange(-.18,.18), top=randRange(3.3,4.1);
+  for(let j=0;j<7;j++) pts.push(new THREE.Vector3(x+Math.sin(j*.8+k)*.16,top-j*.55,z));
+  const tube=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,.035,5,false),vineMat);scene.add(tube);
+}
+
+// ============================================================
+// STAGE 2 — PROCEDURAL SUMMONING CIRCLE
+// ============================================================
+const circleGroup=new THREE.Group(); circleGroup.position.set(-3.4,.22,1.35); scene.add(circleGroup);
+const gold=0xffc552, teal=0x44f5e8;
+function lineLoopPoints(radius,segments,start=0,end=Math.PI*2){ const p=[]; for(let i=0;i<=segments;i++){ const a=THREE.MathUtils.lerp(start,end,i/segments);p.push(new THREE.Vector3(Math.cos(a)*radius,0,Math.sin(a)*radius)); } return p; }
+function makeGlowLine(points,color,opacity=1){
+  const geom=new THREE.BufferGeometry().setFromPoints(points); geom.setDrawRange(0,0);
+  const mat=new THREE.LineBasicMaterial({color,transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false});
+  const line=new THREE.Line(geom,mat); circleGroup.add(line); return {line,geom,mat,count:points.length};
+}
+const circleStrokes=[];
+[2.15,2.75,3.1,3.55].forEach((r,i)=>circleStrokes.push(makeGlowLine(lineLoopPoints(r,160),i%2?teal:gold,i===3?.95:1)));
+const starPts=[];for(let i=0;i<6;i++){const a=-Math.PI/2+i*Math.PI*4/5;starPts.push(new THREE.Vector3(Math.cos(a)*2.35,0,Math.sin(a)*2.35));}starPts.push(starPts[0]);circleStrokes.push(makeGlowLine(starPts,gold,1));
+const triPts=[];for(let i=0;i<4;i++){const a=-Math.PI/2+i*Math.PI*2/3;triPts.push(new THREE.Vector3(Math.cos(a)*1.75,0,Math.sin(a)*1.75));}circleStrokes.push(makeGlowLine(triPts,teal,.9));
+
+// deterministic rune polylines around the outer ring
+const runes=[];
+for(let i=0;i<28;i++){
+  const a=i/28*Math.PI*2 + randRange(-.035,.035), r=3.22; const local=[];
+  const pattern=((SEED>>>(i%16)) ^ (i*13)) & 7;
+  for(let j=0;j<5;j++){
+    const dx=(j-2)*.09, dz=((pattern>>(j%3))&1 ? .12 : -.12) * (j%2?1:.55);
+    const radial=new THREE.Vector3(Math.cos(a),0,Math.sin(a)); const tangent=new THREE.Vector3(-Math.sin(a),0,Math.cos(a));
+    local.push(radial.clone().multiplyScalar(r+dz).add(tangent.multiplyScalar(dx)));
+  }
+  const st=makeGlowLine(local,i%3===0?teal:gold,.92); runes.push(st);
+}
+const circleGlowMat=new THREE.MeshBasicMaterial({color:0x29c6c8,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const circleGlow=new THREE.Mesh(new THREE.RingGeometry(1.9,3.7,96),circleGlowMat);circleGlow.rotation.x=-Math.PI/2;circleGlow.position.y=-.035;circleGroup.add(circleGlow);
+const circleLightA=new THREE.PointLight(gold,0,8,2);circleLightA.position.set(0,1.1,0);circleGroup.add(circleLightA);
+const circleLightB=new THREE.PointLight(teal,0,7,2);circleLightB.position.set(0,.8,0);circleGroup.add(circleLightB);
+
+// teal volumetric-like pillars
+const pillarMat=new THREE.MeshBasicMaterial({color:0x41efe4,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+for(let i=0;i<18;i++){const a=i/18*Math.PI*2;const p=new THREE.Mesh(new THREE.CylinderGeometry(.025,.11,randRange(.8,2.2),5,1,true),pillarMat.clone());p.position.set(Math.cos(a)*randRange(2.3,3.4),randRange(.5,1.2),Math.sin(a)*randRange(2.3,3.4));circleGroup.add(p);}
+
+// ============================================================
+// STAGE 3 — INSTANCED LEAF VORTEX + CURL-LIKE FIELD
+// ============================================================
+const leafGroup=new THREE.Group(); scene.add(leafGroup);
+const leafCount=180;
+const lp=[0,.34,0, -.16,.08,0, -.32,.14,0, -.22,0,0, -.34,-.18,0, -.1,-.12,0, 0,-.4,0, .1,-.12,0, .34,-.18,0, .22,0,0, .32,.14,0, .16,.08,0];
+const li=[];for(let i=1;i<11;i++)li.push(0,i,i+1); // unused fan helper
+const leafGeom=new THREE.BufferGeometry();
+const verts=[];const outline=[[-.16,.08],[-.32,.14],[-.22,0],[-.34,-.18],[-.1,-.12],[0,-.4],[.1,-.12],[.34,-.18],[.22,0],[.32,.14],[.16,.08],[0,.34]];
+for(let i=0;i<outline.length;i++){const a=outline[i],b=outline[(i+1)%outline.length];verts.push(0,0,0,a[0],a[1],0,b[0],b[1],0);} leafGeom.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));leafGeom.computeVertexNormals();
+const leafMat=new THREE.MeshStandardMaterial({color:0xff8b28,roughness:.58,metalness:.02,side:THREE.DoubleSide,emissive:0x541400,emissiveIntensity:.9});
+const leaves=new THREE.InstancedMesh(leafGeom,leafMat,leafCount);leaves.instanceMatrix.setUsage(THREE.DynamicDrawUsage);leaves.castShadow=true;leafGroup.add(leaves);
+const leafData=[];for(let i=0;i<leafCount;i++) leafData.push({p:rand()*Math.PI*2,r:randRange(1.3,3.3),h:randRange(.25,4.6),s:randRange(.65,1.45),w:randRange(.55,1.3),tilt:randRange(-.7,.7),c:rand()});
+const leafDummy=new THREE.Object3D();
+function curlField(x,y,z,t){
+  const vx=Math.sin(z*1.7+t*.8)-Math.cos(y*1.3-t*.5);
+  const vy=Math.sin(x*1.1+t*.6)-Math.cos(z*1.9+t*.4);
+  const vz=Math.sin(y*1.5-t*.7)-Math.cos(x*1.4+t*.5);
+  return new THREE.Vector3(vx,vy*.35,vz).normalize();
+}
+for(let i=0;i<leafCount;i++){const c=new THREE.Color().setHSL(.04+leafData[i].c*.09,.95,.53);leaves.setColorAt(i,c);} if(leaves.instanceColor)leaves.instanceColor.needsUpdate=true;
+const windLines=[];
+for(let k=0;k<4;k++){
+  const pts=[];for(let i=0;i<120;i++){const y=i/119*4.6+.35, a=i/119*Math.PI*5+k*1.48;const r=2.9-.28*(i/119);pts.push(new THREE.Vector3(-3.4+Math.cos(a)*r,y,1.35+Math.sin(a)*r));}
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:k%2?0xffa13b:0xff6b28,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));scene.add(line);windLines.push(line);
+}
+
+// ============================================================
+// STAGE 4 — ICE VOLLEY + STONE TARGET
+// ============================================================
+const golem=new THREE.Group();golem.position.set(5.55,.45,-1.0);scene.add(golem);
+const stoneMat=new THREE.MeshStandardMaterial({color:0x777b82,roughness:.88,metalness:.03});
+function rock(geo,pos,scale,rot=[0,0,0]){const m=new THREE.Mesh(geo,stoneMat);m.position.set(...pos);m.scale.set(...scale);m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;golem.add(m);return m;}
+const dode=new THREE.DodecahedronGeometry(1,0), cyl=new THREE.CylinderGeometry(.65,.72,1.5,7);
+rock(dode,[0,2.25,0],[1.05,1.35,.72],[0,.1,.05]);rock(dode,[0,3.55,0],[.55,.5,.5],[0,.1,0]);
+rock(dode,[-1.18,2.6,0],[.56,.62,.58]);rock(dode,[1.18,2.6,0],[.56,.62,.58]);
+rock(cyl,[-1.3,1.7,0],[.58,.8,.58],[0,0,.12]);rock(cyl,[1.3,1.7,0],[.58,.8,.58],[0,0,-.12]);
+rock(dode,[-.55,.78,0],[.56,.78,.58]);rock(dode,[.55,.78,0],[.56,.78,.58]);
+rock(dode,[-.58,.06,.08],[.72,.42,.85]);rock(dode,[.58,.06,.08],[.72,.42,.85]);
+const eyeMat=new THREE.MeshBasicMaterial({color:0xff9d37});for(const x of [-.18,.18]){const e=new THREE.Mesh(new THREE.SphereGeometry(.06,12,8),eyeMat);e.position.set(x,3.66,.48);golem.add(e);}
+
+const shardGroup=new THREE.Group();scene.add(shardGroup);
+const shardData=[]; const shardGeom=new THREE.ConeGeometry(.12,.9,5,1,false); shardGeom.rotateX(Math.PI/2);
+const shardMat=new THREE.MeshPhysicalMaterial({color:0x9feaff,emissive:0x1b9cff,emissiveIntensity:2.0,roughness:.12,metalness:.05,transparent:true,opacity:.94,transmission:.12,thickness:.2});
+for(let i=0;i<12;i++){const m=new THREE.Mesh(shardGeom,shardMat.clone());m.castShadow=true;shardGroup.add(m);const ang=(i-5.5)*.085;shardData.push({m,offset:new THREE.Vector3(randRange(-.45,.45),randRange(-.75,.75),randRange(-.35,.35)),delay:i*.055,ang});}
+const mistGeom=new THREE.BufferGeometry();const mistBase=[];for(let i=0;i<130;i++)mistBase.push(new THREE.Vector3(randRange(-1.1,1.1),randRange(-.8,.8),randRange(-.8,.8)));mistGeom.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(130*3),3));
+const mistMat=new THREE.PointsMaterial({color:0xc8f4ff,size:.12,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const mist=new THREE.Points(mistGeom,mistMat);scene.add(mist);
+const iceOrigin=new THREE.Vector3(0.6,3.2,.45), iceTarget=new THREE.Vector3(5.4,2.65,-.75);
+
+// ============================================================
+// STAGE 5 — DETONATION PARTICLES / SMOKE / DEBRIS
+// ============================================================
+const explosionOrigin=new THREE.Vector3(5.45,2.7,-.75);
+const sparkCount=170;const sparkGeom=new THREE.BufferGeometry();sparkGeom.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(sparkCount*3),3));
+const sparkMat=new THREE.PointsMaterial({color:0xff9d38,size:.095,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const sparks=new THREE.Points(sparkGeom,sparkMat);scene.add(sparks);
+const sparkVel=[];for(let i=0;i<sparkCount;i++){const v=new THREE.Vector3(randRange(-1,1),randRange(-.15,1.1),randRange(-1,1)).normalize().multiplyScalar(randRange(2.2,7.4));sparkVel.push(v);}
+const debrisCount=45;const debrisGeom=new THREE.DodecahedronGeometry(.12,0);const debrisMat=new THREE.MeshStandardMaterial({color:0x5b5d62,roughness:.96});const debris=new THREE.InstancedMesh(debrisGeom,debrisMat,debrisCount);debris.castShadow=true;scene.add(debris);
+const debrisData=[];for(let i=0;i<debrisCount;i++)debrisData.push({v:new THREE.Vector3(randRange(-1,1),randRange(.15,1.2),randRange(-1,1)).normalize().multiplyScalar(randRange(1.5,5.4)),w:new THREE.Vector3(randRange(-4,4),randRange(-4,4),randRange(-4,4)),s:randRange(.55,1.8)});
+const debrisDummy=new THREE.Object3D();
+const smoke=[];for(let i=0;i<18;i++){const sm=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),new THREE.MeshBasicMaterial({color:i%2?0x7d7973:0x55565e,transparent:true,opacity:0,depthWrite:false}));smoke.push({m:sm,delay:randRange(0,.55),o:new THREE.Vector3(randRange(-.7,.7),randRange(-.2,.8),randRange(-.7,.7)),s:randRange(.55,1.25)});scene.add(sm);}
+const flash=new THREE.PointLight(0xff7b24,0,15,2);flash.position.copy(explosionOrigin);scene.add(flash);
+
+// ============================================================
+// STAGE 6 — THREE PROCEDURAL MATERIAL SPHERES
+// ============================================================
+const pedestalGroup=new THREE.Group();scene.add(pedestalGroup);
+const pedMat=new THREE.MeshStandardMaterial({color:0x56515a,roughness:.82,metalness:.04});
+function pedestal(x,z){const g=new THREE.Group();g.position.set(x,0,z);const b1=new THREE.Mesh(new THREE.CylinderGeometry(.72,.86,.35,4),pedMat);b1.position.y=.28;b1.rotation.y=Math.PI/4;const b2=new THREE.Mesh(new THREE.CylinderGeometry(.52,.62,1.0,4),pedMat);b2.position.y=.9;b2.rotation.y=Math.PI/4;const top=new THREE.Mesh(new THREE.CylinderGeometry(.7,.56,.25,4),pedMat);top.position.y=1.48;top.rotation.y=Math.PI/4;for(const m of [b1,b2,top]){m.castShadow=true;m.receiveShadow=true;g.add(m);}pedestalGroup.add(g);return g;}
+const pedPos=[new THREE.Vector3(1.65,0,-4.8),new THREE.Vector3(3.65,0,-4.9),new THREE.Vector3(5.55,0,-4.25)];pedPos.forEach(p=>pedestal(p.x,p.z));
+
+const noiseGLSL=`
+float hash(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+float noise(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i+vec3(0,0,0)),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
+float fbm(vec3 p){float f=0.,a=.5;for(int i=0;i<5;i++){f+=a*noise(p);p*=2.02;a*=.5;}return f;}
+`;
+const sphereVertex=`varying vec3 vPos;varying vec3 vN;uniform float uTime;${noiseGLSL}void main(){vN=normalize(normalMatrix*normal);vPos=position;float n=fbm(normalize(position)*3.2+vec3(0.,uTime*.35,0.));vec3 p=position+normal*(n-.5)*.08;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`;
+const waterFrag=`precision highp float;varying vec3 vPos;varying vec3 vN;uniform float uTime;uniform float uReveal;${noiseGLSL}void main(){vec3 N=normalize(vN);float fres=pow(1.-abs(dot(N,vec3(0.,0.,1.))),2.4);float n=fbm(vPos*4.+vec3(uTime*.15,uTime*.38,0.));float bands=.5+.5*sin(vPos.y*14.+n*8.-uTime*2.2);vec3 c=mix(vec3(.01,.18,.46),vec3(.12,.95,1.),bands*.55+fres*.65);gl_FragColor=vec4(c,(.72+fres*.25)*uReveal);}`;
+const fireFrag=`precision highp float;varying vec3 vPos;varying vec3 vN;uniform float uTime;uniform float uReveal;${noiseGLSL}void main(){float n=fbm(vPos*3.8+vec3(0.,-uTime*1.25,0.));float flame=smoothstep(.18,.92,n+vPos.y*.18);vec3 c=mix(vec3(1.,.08,.0),vec3(1.,.95,.18),flame);float edge=pow(1.-abs(dot(normalize(vN),vec3(0.,0.,1.))),1.7);gl_FragColor=vec4(c*(1.4+flame*.9),(.82+edge*.16)*uReveal);}`;
+const iceFrag=`precision highp float;varying vec3 vPos;varying vec3 vN;uniform float uTime;uniform float uReveal;${noiseGLSL}void main(){vec3 N=normalize(vN);float fres=pow(1.-abs(dot(N,vec3(0.,0.,1.))),2.2);float a=abs(fract((vPos.x+fbm(vPos*5.))*5.)-.5);float b=abs(fract((vPos.y+noise(vPos*7.))*6.)-.5);float cracks=1.-smoothstep(.025,.11,min(a,b));float frost=fbm(vPos*6.);vec3 c=mix(vec3(.08,.35,.65),vec3(.82,.98,1.),fres*.8+cracks*.9+frost*.15);gl_FragColor=vec4(c,(.42+fres*.42+cracks*.24)*uReveal);}`;
+const sphereGeom=new THREE.SphereGeometry(.68,48,32);
+function shaderSphere(pos,frag,scale=new THREE.Vector3(1,1,1)){const mat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uReveal:{value:0}},vertexShader:sphereVertex,fragmentShader:frag,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});const m=new THREE.Mesh(sphereGeom,mat);m.position.copy(pos).add(new THREE.Vector3(0,2.2,0));m.scale.copy(scale);scene.add(m);return m;}
+const waterSphere=shaderSphere(pedPos[0],waterFrag,new THREE.Vector3(1,1,1));const fireSphere=shaderSphere(pedPos[1],fireFrag,new THREE.Vector3(.86,1.16,.86));const iceSphere=shaderSphere(pedPos[2],iceFrag,new THREE.Vector3(1,1,1));
+const waterLight=new THREE.PointLight(0x23a9ff,0,5,2),fireLight=new THREE.PointLight(0xff651c,0,5,2),iceLight=new THREE.PointLight(0x9ce8ff,0,5,2);[waterLight,fireLight,iceLight].forEach((l,i)=>{l.position.copy(pedPos[i]).add(new THREE.Vector3(0,2.35,0));scene.add(l);});
+
+// subtle orb halos (pure geometry, no texture)
+for(const [m,c] of [[waterSphere,0x24d8ff],[fireSphere,0xff751e],[iceSphere,0xb9f2ff]]){const halo=new THREE.Mesh(new THREE.SphereGeometry(.82,24,16),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.08,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide}));halo.position.copy(m.position);scene.add(halo);m.userData.halo=halo;}
+
+// ----- animation -----
+const hud=document.querySelector('#hud'); let startTime=performance.now();
+window.__replay=()=>{forcedTime=null;startTime=performance.now();};
+window.__setTime=(t)=>{forcedTime=THREE.MathUtils.clamp(+t||0,0,20);};
+document.querySelector('#replay').onclick=window.__replay;
+
+function updateCamera(t){
+  const u=t/20; const ang=THREE.MathUtils.lerp(.78,-.02,u)+Math.sin(u*Math.PI)*.06;
+  let radius=14.3-1.3*smooth(14,20,t), height=6.8-.75*smooth(14,20,t);
+  camera.position.set(Math.cos(ang)*radius,height,Math.sin(ang)*radius);
+  const focus=new THREE.Vector3();
+  if(t<5) focus.set(-2.0,1.0,.8); else if(t<10.5) focus.set(1.0,2.1,0); else if(t<14) focus.set(4.3,2.0,-1); else focus.set(3.6,1.4,-3.0);
+  camera.lookAt(focus);
+}
+
+function updateCircle(t){
+  const enabled=BUILD_STAGE>=2; circleGroup.visible=enabled;if(!enabled)return;
+  const p=smooth(.4,4.1,t);
+  circleStrokes.forEach((s,i)=>{const local=clamp01((p*circleStrokes.length-i)/2.2);s.geom.setDrawRange(0,Math.max(0,Math.floor(s.count*local)));});
+  runes.forEach((s,i)=>{const local=clamp01((p*1.25-i/runes.length)*3.1);s.geom.setDrawRange(0,Math.max(0,Math.floor(s.count*local)));});
+  circleGlowMat.opacity=.12*p+.06*Math.sin(t*5)*p; circleLightA.intensity=26*p*(.88+.12*Math.sin(t*3.1)); circleLightB.intensity=18*p*(.88+.12*Math.cos(t*2.6));
+  circleGroup.children.forEach(o=>{if(o.material && o.material!==circleGlowMat && o.geometry?.type==='CylinderGeometry')o.material.opacity=.015+.045*p*(.5+.5*Math.sin(t*2+o.position.x));});
+}
+
+function updateLeaves(t){
+  const enabled=BUILD_STAGE>=3; leafGroup.visible=enabled; windLines.forEach(l=>l.visible=enabled); if(!enabled)return;
+  const p=smooth(3.3,5.3,t)*(1-smooth(10.8,13.2,t));leafMat.opacity=p;leafMat.transparent=true;
+  const center=new THREE.Vector3(-3.4,0,1.35);
+  for(let i=0;i<leafCount;i++){
+    const d=leafData[i], phase=d.p+t*d.s*1.35, lift=(d.h+t*d.w*.4)%4.8;
+    const r=d.r*(.94+.12*Math.sin(t*.8+d.p));const f=curlField(Math.cos(phase)*r,lift,Math.sin(phase)*r,t).multiplyScalar(.28);
+    leafDummy.position.set(center.x+Math.cos(phase)*r+f.x,.35+lift+f.y,center.z+Math.sin(phase)*r+f.z);
+    leafDummy.rotation.set(phase*.7+d.tilt,phase+Math.PI/2,d.tilt+t*d.w*1.8);const sc=.46*(.75+.35*Math.sin(i*3.2));leafDummy.scale.setScalar(sc*p);
+    leafDummy.updateMatrix();leaves.setMatrixAt(i,leafDummy.matrix);
+  } leaves.instanceMatrix.needsUpdate=true;
+  windLines.forEach((l,k)=>{l.material.opacity=.14*p;l.rotation.y=t*.1*(k%2?1:-1);});
+}
+
+function updateIce(t){
+  const enabled=BUILD_STAGE>=4;golem.visible=enabled;shardGroup.visible=enabled;mist.visible=enabled;if(!enabled)return;
+  const cond=smooth(6.7,8.0,t), launchStart=8.9;
+  const posAttr=mistGeom.attributes.position;
+  for(let i=0;i<130;i++){const b=mistBase[i],drift=(t-6.5);posAttr.setXYZ(i,iceOrigin.x+b.x+Math.sin(i*2.1+t)*.12,iceOrigin.y+b.y+Math.max(0,drift)*.05,iceOrigin.z+b.z+Math.cos(i*1.7+t)*.12);}posAttr.needsUpdate=true;
+  mistMat.opacity=.42*cond*(1-smooth(9.0,10.3,t));
+  shardData.forEach((d,i)=>{
+    const form=iceOrigin.clone().add(d.offset); const impact=iceTarget.clone().add(new THREE.Vector3(0,(i-5.5)*.09,Math.sin(i)*.22));
+    const lp=smooth(launchStart+d.delay,10.55+d.delay,t); const hang=clamp01((t-7.0)/1.0);
+    d.m.position.lerpVectors(form,impact,lp); const s=cond*THREE.MathUtils.lerp(.25,1,hang);d.m.scale.setScalar(s);
+    d.m.lookAt(impact.clone().add(new THREE.Vector3(1.2,0,0)));d.m.rotateZ(Math.PI/2);
+  });
+  const hit=smooth(10.9,11.25,t);golem.rotation.z=-.04*hit;
+}
+
+function updateExplosion(t){
+  const enabled=BUILD_STAGE>=5;sparks.visible=enabled;debris.visible=enabled;smoke.forEach(s=>s.m.visible=enabled);flash.visible=enabled;if(!enabled)return;
+  const dt=t-11.05; const active=dt>0; sparkMat.opacity=active?clamp01(1-dt/2.1):0; flash.intensity=active?70*Math.exp(-dt*5.2):0;
+  const a=sparkGeom.attributes.position;for(let i=0;i<sparkCount;i++){if(!active){a.setXYZ(i,explosionOrigin.x,explosionOrigin.y,explosionOrigin.z);continue;}const v=sparkVel[i];a.setXYZ(i,explosionOrigin.x+v.x*dt,explosionOrigin.y+v.y*dt-2.2*dt*dt,explosionOrigin.z+v.z*dt);}a.needsUpdate=true;
+  for(let i=0;i<debrisCount;i++){const d=debrisData[i];const tt=Math.max(0,dt);debrisDummy.position.set(explosionOrigin.x+d.v.x*tt,explosionOrigin.y+d.v.y*tt-2.7*tt*tt,explosionOrigin.z+d.v.z*tt);debrisDummy.rotation.set(d.w.x*tt,d.w.y*tt,d.w.z*tt);debrisDummy.scale.setScalar(active?d.s:0);debrisDummy.updateMatrix();debris.setMatrixAt(i,debrisDummy.matrix);}debris.instanceMatrix.needsUpdate=true;
+  smoke.forEach((s,i)=>{const tt=dt-s.delay;if(tt<0){s.m.material.opacity=0;return;}s.m.position.copy(explosionOrigin).add(s.o).add(new THREE.Vector3(Math.sin(i)*tt*.22,tt*.8,Math.cos(i*1.7)*tt*.18));const sc=s.s*(.2+tt*1.35);s.m.scale.setScalar(sc);s.m.material.opacity=.28*clamp01(1-tt/2.4);});
+  // target remains readable through initial blast, then breaks away
+  golem.visible=BUILD_STAGE>=4 && !(t>12.35);
+}
+
+function updateSpheres(t){
+  const enabled=BUILD_STAGE>=6; pedestalGroup.visible=enabled;[waterSphere,fireSphere,iceSphere,waterSphere.userData.halo,fireSphere.userData.halo,iceSphere.userData.halo].forEach(o=>o.visible=enabled);[waterLight,fireLight,iceLight].forEach(l=>l.visible=enabled);if(!enabled)return;
+  const p=smooth(13.1,15.2,t);pedestalGroup.scale.setScalar(p);[waterSphere,fireSphere,iceSphere].forEach((s,i)=>{s.material.uniforms.uTime.value=t;s.material.uniforms.uReveal.value=p;s.userData.halo.material.opacity=.07*p*(.65+.35*Math.sin(t*2+i));});
+  waterSphere.rotation.y=t*.5;fireSphere.rotation.y=-t*.62;iceSphere.rotation.y=t*.22;
+  waterLight.intensity=10*p;fireLight.intensity=13*p*(.8+.2*Math.sin(t*7));iceLight.intensity=9*p;
+}
+
+function frame(now){
+  requestAnimationFrame(frame);
+  let t=forcedTime!==null?forcedTime:((now-startTime)/1000)%20;
+  updateCamera(t);updateCircle(t);updateLeaves(t);updateIce(t);updateExplosion(t);updateSpheres(t);
+  stars.rotation.y=t*.004;
+  if(document.body.classList.contains('debug'))hud.textContent=`Spell VFX Test Range • stage ${BUILD_STAGE}/6 • t=${t.toFixed(2)}s • seed ${SEED}`;
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(frame);
+
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+</script>
+</body>
+</html>
