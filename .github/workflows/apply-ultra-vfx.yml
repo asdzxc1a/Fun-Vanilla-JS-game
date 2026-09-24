@@ -1,0 +1,53 @@
+name: Apply Ultra VFX Patch
+on:
+  push:
+    branches:
+      - spell-vfx-test-range-20260924
+    paths:
+      - .ultra/READY
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconstruct and apply verified Ultra FX patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .ultra/p00 .ultra/p01 .ultra/p02 .ultra/p03 > /tmp/ultra.patch.gz.b64
+          test "$(wc -c < /tmp/ultra.patch.gz.b64)" -eq 16320
+          echo "5258ade0598f2367a8ff36faedc4ea2cc190548253b7179f46259736ef583e22  /tmp/ultra.patch.gz.b64" | sha256sum -c -
+          base64 -d /tmp/ultra.patch.gz.b64 | gunzip > /tmp/ultra.patch
+          echo "b54b85ade486bc9761b4836bfc61b6bf4e123cabb96a7842a100c22bde830e7b  /tmp/ultra.patch" | sha256sum -c -
+          patch --forward spell-vfx-test-range/index.html < /tmp/ultra.patch
+          test "$(git hash-object spell-vfx-test-range/index.html)" = "d19aa0b25f2268de17efe2e32fc88638241f4a36"
+          grep -q "ULTRA FX LAYER" spell-vfx-test-range/index.html
+          grep -q "const leafCount=420" spell-vfx-test-range/index.html
+          grep -q "const sparkCount=420" spell-vfx-test-range/index.html
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("spell-vfx-test-range/index.html").read_text()
+          a=s.index('<script type="module">')+len('<script type="module">')
+          b=s.index('</script>',a)
+          Path('/tmp/spell_check.mjs').write_text(s[a:b])
+          PY
+          node --check /tmp/spell_check.mjs
+      - name: Commit upgraded scene
+        shell: bash
+        run: |
+          set -e
+          rm -rf .ultra
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add spell-vfx-test-range/index.html .ultra
+          git commit -m "Apply Ultra FX scene upgrade"
+          git push
