@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - spell-vfx-test-range-20260924
-    paths:
-      - .ultra/READY
 
 permissions:
   contents: write
