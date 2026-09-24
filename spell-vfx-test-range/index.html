@@ -63,13 +63,12 @@ scene.add(rim);
 // ----- Night sky -----
 const starGeom = new THREE.BufferGeometry();
 const starPos=[];
-for(let i=0;i<1600;i++){
-  const th=randRange(0,Math.PI*2), u=randRange(0.08,0.98), r=randRange(26,45);
-  const ph=Math.acos(THREE.MathUtils.lerp(0.05,0.95,u));
-  starPos.push(Math.cos(th)*Math.sin(ph)*r, Math.cos(ph)*r+8, Math.sin(th)*Math.sin(ph)*r);
+for(let i=0;i<2200;i++){
+  const th=randRange(0,Math.PI*2), r=randRange(25,44), y=randRange(5.5,18.0);
+  starPos.push(Math.cos(th)*r, y, Math.sin(th)*r);
 }
 starGeom.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));
-const stars=new THREE.Points(starGeom,new THREE.PointsMaterial({color:0xd8e6ff,size:.07,sizeAttenuation:true,transparent:true,opacity:.95,depthWrite:false,fog:false}));
+const stars=new THREE.Points(starGeom,new THREE.PointsMaterial({color:0xd8e6ff,size:.085,sizeAttenuation:true,transparent:true,opacity:.95,depthWrite:false,fog:false}));
 scene.add(stars);
 
 // ----- Circular stone arena -----
