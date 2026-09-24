@@ -52,13 +52,13 @@ renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.34;
+renderer.toneMappingExposure = 1.18;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
-const hemi = new THREE.HemisphereLight(0x274a82, 0x120b08, 0.44);
+const hemi = new THREE.HemisphereLight(0x274a82, 0x100907, 0.27);
 scene.add(hemi);
-const rim = new THREE.DirectionalLight(0x8ecbff, 4.0);
+const rim = new THREE.DirectionalLight(0x8ecbff, 2.35);
 rim.position.set(-7,9,-7); rim.castShadow=true; rim.shadow.mapSize.set(1024,1024);
 rim.shadow.camera.left=-12; rim.shadow.camera.right=12; rim.shadow.camera.top=12; rim.shadow.camera.bottom=-12;
 scene.add(rim);
@@ -209,8 +209,8 @@ const coreMat=new THREE.MeshBasicMaterial({color:0xff812d,transparent:true,opaci
 rock(dode,[-1.62,1.25,.05],[.5,.5,.5]);rock(dode,[1.62,1.25,.05],[.5,.5,.5]);
 
 const shardGroup=new THREE.Group();scene.add(shardGroup);
-const shardData=[]; const shardGeom=new THREE.ConeGeometry(.12,.9,5,1,false); shardGeom.rotateX(Math.PI/2);
-const shardMat=new THREE.MeshPhysicalMaterial({color:0x9feaff,emissive:0x1b9cff,emissiveIntensity:2.0,roughness:.12,metalness:.05,transparent:true,opacity:.94,transmission:.12,thickness:.2});
+const shardData=[]; const shardGeom=new THREE.ConeGeometry(.105,1.18,6,1,false); shardGeom.rotateX(Math.PI/2);
+const shardMat=new THREE.MeshPhysicalMaterial({color:0x7fcfff,emissive:0x126dff,emissiveIntensity:1.45,roughness:.07,metalness:.02,transparent:true,opacity:.82,transmission:.38,thickness:.34,ior:1.31,clearcoat:.5,clearcoatRoughness:.08});
 for(let i=0;i<12;i++){const m=new THREE.Mesh(shardGeom,shardMat.clone());m.castShadow=true;shardGroup.add(m);const ang=(i-5.5)*.085;shardData.push({m,offset:new THREE.Vector3(randRange(-.45,.45),randRange(-.75,.75),randRange(-.35,.35)),delay:i*.055,ang});}
 const mistGeom=new THREE.BufferGeometry();const mistBase=[];for(let i=0;i<130;i++)mistBase.push(new THREE.Vector3(randRange(-1.1,1.1),randRange(-.8,.8),randRange(-.8,.8)));mistGeom.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(130*3),3));
 const mistMat=new THREE.PointsMaterial({color:0xc8f4ff,size:.12,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const mist=new THREE.Points(mistGeom,mistMat);scene.add(mist);
@@ -228,7 +228,7 @@ const sparkVel=[];for(let i=0;i<sparkCount;i++){const v=new THREE.Vector3(randRa
 const debrisCount=45;const debrisGeom=new THREE.DodecahedronGeometry(.12,0);const debrisMat=new THREE.MeshStandardMaterial({color:0x5b5d62,roughness:.96});const debris=new THREE.InstancedMesh(debrisGeom,debrisMat,debrisCount);debris.castShadow=true;scene.add(debris);
 const debrisData=[];for(let i=0;i<debrisCount;i++)debrisData.push({v:new THREE.Vector3(randRange(-1,1),randRange(.15,1.2),randRange(-1,1)).normalize().multiplyScalar(randRange(1.5,5.4)),w:new THREE.Vector3(randRange(-4,4),randRange(-4,4),randRange(-4,4)),s:randRange(.55,1.8)});
 const debrisDummy=new THREE.Object3D();
-const smoke=[];for(let i=0;i<22;i++){const sm=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),new THREE.MeshStandardMaterial({color:i%2?0x777775:0x4d5158,roughness:1,metalness:0,transparent:true,opacity:0,depthWrite:false}));sm.scale.set(randRange(.8,1.25),randRange(.75,1.35),randRange(.8,1.2));smoke.push({m:sm,delay:randRange(0,.6),o:new THREE.Vector3(randRange(-.8,.8),randRange(-.25,.9),randRange(-.8,.8)),s:randRange(.52,1.28),spin:randRange(-.7,.7)});scene.add(sm);}
+const smoke=[];for(let i=0;i<22;i++){const sm=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),new THREE.MeshStandardMaterial({color:i%2?0x777775:0x4d5158,roughness:1,metalness:0,transparent:true,opacity:0,depthWrite:false}));sm.scale.set(randRange(.8,1.25),randRange(.75,1.35),randRange(.8,1.2));smoke.push({m:sm,delay:randRange(0,.28),o:new THREE.Vector3(randRange(-.8,.8),randRange(-.25,.9),randRange(-.8,.8)),s:randRange(.52,1.28),spin:randRange(-.7,.7)});scene.add(sm);}
 const flash=new THREE.PointLight(0xff7b24,0,15,2);flash.position.copy(explosionOrigin);scene.add(flash);
 const fireballs=[];for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),new THREE.MeshBasicMaterial({color:i%2?0xffb236:0xff5a17,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));m.position.copy(explosionOrigin);scene.add(m);fireballs.push(m);}
 
@@ -270,10 +270,10 @@ const cinematic=new THREE.Group(); scene.add(cinematic);
 // Replace the rough prototype slab field with bevelled radial flagstones.
 arena.children.forEach(o=>{if(o.geometry?.type==='DodecahedronGeometry')o.visible=false;});
 const wetStoneMats=[
-  new THREE.MeshPhysicalMaterial({color:0x1c2734,roughness:.56,metalness:.03,clearcoat:.38,clearcoatRoughness:.28}),
-  new THREE.MeshPhysicalMaterial({color:0x26303b,roughness:.60,metalness:.025,clearcoat:.34,clearcoatRoughness:.32}),
-  new THREE.MeshPhysicalMaterial({color:0x161f2c,roughness:.50,metalness:.04,clearcoat:.42,clearcoatRoughness:.24}),
-  new THREE.MeshPhysicalMaterial({color:0x31343a,roughness:.64,metalness:.02,clearcoat:.28,clearcoatRoughness:.38})
+  new THREE.MeshPhysicalMaterial({color:0x111a25,roughness:.68,metalness:.025,clearcoat:.44,clearcoatRoughness:.24}),
+  new THREE.MeshPhysicalMaterial({color:0x18212b,roughness:.71,metalness:.02,clearcoat:.38,clearcoatRoughness:.30}),
+  new THREE.MeshPhysicalMaterial({color:0x0d151f,roughness:.64,metalness:.03,clearcoat:.46,clearcoatRoughness:.22}),
+  new THREE.MeshPhysicalMaterial({color:0x20242b,roughness:.73,metalness:.018,clearcoat:.34,clearcoatRoughness:.35})
 ];
 function stoneSector(r0,r1,a0,a1){
   const sh=new THREE.Shape(), steps=5;
@@ -311,14 +311,16 @@ const groundLeaves=new THREE.InstancedMesh(leafGeom,new THREE.MeshStandardMateri
 for(let i=0;i<85;i++){const rr=randRange(4.4,9.5),a=rand()*Math.PI*2;gd.position.set(Math.cos(a)*rr,.255,Math.sin(a)*rr);gd.rotation.set(-Math.PI/2+randRange(-.15,.15),rand()*6.28,randRange(-.1,.1));gd.scale.setScalar(randRange(.3,.62));gd.updateMatrix();groundLeaves.setMatrixAt(i,gd.matrix);groundLeaves.setColorAt(i,new THREE.Color().setHSL(randRange(.02,.11),.85,randRange(.35,.56)));}groundLeaves.instanceColor.needsUpdate=true;cinematic.add(groundLeaves);
 
 // Moon, atmospheric halo, denser Milky Way band, distant clouds and fortress.
-const moonGroup=new THREE.Group();moonGroup.position.set(-18,16,-31);scene.add(moonGroup);
+scene.traverse(o=>{if(o.material===mountainMat)o.visible=false;});
+const ridgeMat=new THREE.MeshStandardMaterial({color:0x080f1b,roughness:1});const ridge=new THREE.Group();scene.add(ridge);for(let i=0;i<22;i++){const x=-20+i*1.9+randRange(-.7,.7),h=randRange(2.4,6.4),m=new THREE.Mesh(new THREE.ConeGeometry(randRange(1.8,3.8),h,5),ridgeMat);m.position.set(x,h*.42-1.4,-22-randRange(0,4));m.rotation.y=rand()*Math.PI;m.scale.x=randRange(.65,1.55);ridge.add(m);}
+const moonGroup=new THREE.Group();moonGroup.position.set(-11.5,13.8,-18.5);scene.add(moonGroup);
 const moon=new THREE.Mesh(new THREE.SphereGeometry(1.65,40,24),new THREE.MeshBasicMaterial({color:0xdbe9ff}));moonGroup.add(moon);
 const moonHalo=new THREE.Mesh(new THREE.SphereGeometry(2.35,32,20),new THREE.MeshBasicMaterial({color:0x9dbdff,transparent:true,opacity:.075,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide}));moonGroup.add(moonHalo);
-const moonLight=new THREE.DirectionalLight(0xa6caff,1.15);moonLight.position.set(-15,20,-20);scene.add(moonLight);
-const milkyGeom=new THREE.BufferGeometry(),milkyPos=[];for(let i=0;i<1050;i++){const q=randRange(-1,1),x=q*26+randRange(-3.5,3.5),y=17+q*8+randRange(-2.3,2.3),z=-34+randRange(-2,2);milkyPos.push(x,y,z);}milkyGeom.setAttribute('position',new THREE.Float32BufferAttribute(milkyPos,3));const milky=new THREE.Points(milkyGeom,new THREE.PointsMaterial({color:0x8bbcff,size:.07,transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending}));scene.add(milky);
+const moonLight=new THREE.DirectionalLight(0xa6caff,.62);moonLight.position.set(-15,20,-20);scene.add(moonLight);
+const milkyGeom=new THREE.BufferGeometry(),milkyPos=[];for(let i=0;i<1050;i++){const q=randRange(-1,1),x=q*21+randRange(-3.0,3.0),y=14.5+q*6+randRange(-2.0,2.0),z=-24+randRange(-1.5,1.5);milkyPos.push(x,y,z);}milkyGeom.setAttribute('position',new THREE.Float32BufferAttribute(milkyPos,3));const milky=new THREE.Points(milkyGeom,new THREE.PointsMaterial({color:0x8bbcff,size:.07,transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending}));scene.add(milky);
 const cloudGroup=new THREE.Group();scene.add(cloudGroup);const cloudMat=new THREE.MeshStandardMaterial({color:0x445167,roughness:1,transparent:true,opacity:.10,depthWrite:false});
-for(let i=0;i<32;i++){const c=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),cloudMat);c.position.set(randRange(-26,25),randRange(8.5,15.5),randRange(-34,-23));c.scale.set(randRange(2.2,5.2),randRange(.35,.9),randRange(.8,2.1));cloudGroup.add(c);}
-const fortress=new THREE.Group();fortress.position.set(-6.5,-1.0,-26);scene.add(fortress);const fortMat=new THREE.MeshStandardMaterial({color:0x080d16,roughness:1});const windowMat=new THREE.MeshBasicMaterial({color:0xffa44b});
+for(let i=0;i<32;i++){const c=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),cloudMat);c.position.set(randRange(-22,20),randRange(8.0,13.5),randRange(-25,-18));c.scale.set(randRange(2.2,5.2),randRange(.35,.9),randRange(.8,2.1));cloudGroup.add(c);}
+const fortress=new THREE.Group();fortress.position.set(-4.2,-.85,-20.5);fortress.scale.setScalar(.88);scene.add(fortress);const fortMat=new THREE.MeshStandardMaterial({color:0x080d16,roughness:1});const windowMat=new THREE.MeshBasicMaterial({color:0xffa44b});
 function fortTower(x,h,w){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),fortMat);b.position.set(x,h/2,0);fortress.add(b);const sp=new THREE.Mesh(new THREE.ConeGeometry(w*.8,h*.7,4),fortMat);sp.position.set(x,h*1.15,0);sp.rotation.y=Math.PI/4;fortress.add(sp);for(let yy=1;yy<h-1;yy+=1.1){const win=new THREE.Mesh(new THREE.BoxGeometry(.08,.18,.03),windowMat);win.position.set(x+w*.25,yy,w*.51);fortress.add(win);}}
 fortTower(-2.2,4.8,1.25);fortTower(0,6.2,1.6);fortTower(2.2,4.5,1.2);const hall=new THREE.Mesh(new THREE.BoxGeometry(5.6,2.1,1.5),fortMat);hall.position.y=1.1;fortress.add(hall);
 
@@ -351,10 +353,34 @@ armorRock([-1.48,1.9,.02],[.46,.64,.48],[0,0,.16]);armorRock([1.48,1.9,.02],[.46
 const runeDiskMat=new THREE.MeshStandardMaterial({color:0x3d3d3f,roughness:.62,metalness:.08,emissive:0x241307,emissiveIntensity:.3});
 for(const sx of [-1,1]){const d=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.12,24),runeDiskMat);d.rotation.x=Math.PI/2;d.position.set(sx*1.34,2.82,.58);golem.add(d);const r=new THREE.Mesh(new THREE.TorusGeometry(.24,.025,8,32),new THREE.MeshBasicMaterial({color:0xff9b40}));r.position.copy(d.position);golem.add(r);}
 const chestRune=new THREE.Mesh(new THREE.TorusGeometry(.48,.035,8,48),new THREE.MeshBasicMaterial({color:0xff7b2c,transparent:true,opacity:.8,blending:THREE.AdditiveBlending}));chestRune.position.set(0,2.35,.77);golem.add(chestRune);
-const moltenCracks=[];for(let k=0;k<9;k++){const pts=[];let x=randRange(-.55,.55),y=randRange(1.8,2.9);for(let j=0;j<4;j++){pts.push(new THREE.Vector3(x,y,.79));x+=randRange(-.18,.18);y+=randRange(-.22,.22);}const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xff7a2d,transparent:true,opacity:.35,blending:THREE.AdditiveBlending}));golem.add(ln);moltenCracks.push(ln);}
 
+const moltenCracks=[];for(let k=0;k<13;k++){const pts=[];let x=randRange(-.62,.62),y=randRange(1.75,2.95);for(let j=0;j<5;j++){pts.push(new THREE.Vector3(x,y,.82));x+=randRange(-.16,.16);y+=randRange(-.18,.18);}const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xff7a2d,transparent:true,opacity:.35,blending:THREE.AdditiveBlending}));golem.add(ln);moltenCracks.push(ln);}
+
+// Hide the prototype low-poly anatomy, retain its glow/rune helpers.
+golem.children.forEach(o=>{if(o.material===stoneMat||o.material===golemArmorMat)o.visible=false;});
+const heroStoneMats=[
+ new THREE.MeshPhysicalMaterial({color:0x625d58,roughness:.77,metalness:.025,clearcoat:.07,clearcoatRoughness:.72}),
+ new THREE.MeshPhysicalMaterial({color:0x76706a,roughness:.74,metalness:.02,clearcoat:.06,clearcoatRoughness:.76}),
+ new THREE.MeshPhysicalMaterial({color:0x514e4d,roughness:.80,metalness:.025,clearcoat:.05,clearcoatRoughness:.78})
+];
+const heroArmorMat=new THREE.MeshPhysicalMaterial({color:0x383a3d,roughness:.61,metalness:.09,clearcoat:.12,clearcoatRoughness:.58});
+function heroPart(geo,pos,scale,rot=[0,0,0],mat=null){const m=new THREE.Mesh(geo,mat||heroStoneMats[(rand()*heroStoneMats.length)|0]);m.position.set(...pos);m.scale.set(...scale);m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;golem.add(m);return m;}
+const hiIco=new THREE.IcosahedronGeometry(1,2),hiDode=new THREE.DodecahedronGeometry(1,1);
+heroPart(hiIco,[0,2.32,0],[.92,1.18,.66],[0,.02,.02]);heroPart(hiDode,[0,2.55,.18],[.72,.72,.58],[0,.05,0],heroArmorMat);
+heroPart(hiDode,[0,3.56,.02],[.50,.46,.46],[0,.08,0]);heroPart(hiIco,[0,3.12,-.02],[.31,.30,.30]);
+for(const sx of [-1,1]){heroPart(hiIco,[sx*1.02,2.72,.0],[.72,.66,.66],[0,0,sx*.12],heroArmorMat);heroPart(new THREE.CapsuleGeometry(.33,.72,6,12),[sx*1.28,2.03,.02],[1,1,1],[0,0,sx*.15]);heroPart(hiDode,[sx*1.36,1.38,.08],[.47,.62,.46],[0,0,sx*.08]);heroPart(hiDode,[sx*1.43,.87,.16],[.50,.44,.50],[0,0,sx*.05],heroArmorMat);}
+for(const sx of [-1,1]){heroPart(new THREE.CapsuleGeometry(.38,.68,6,12),[sx*.48,1.08,0],[1,1,1],[0,0,-sx*.035]);heroPart(new THREE.CapsuleGeometry(.35,.62,6,12),[sx*.50,.46,.05],[1,1,1],[0,0,sx*.02]);heroPart(hiDode,[sx*.52,.04,.22],[.58,.28,.78],[0,0,0],heroArmorMat);}
+const brow=new THREE.Mesh(new THREE.BoxGeometry(.72,.16,.22),heroArmorMat);brow.position.set(0,3.67,.42);brow.castShadow=true;golem.add(brow);
+const visorMat=new THREE.MeshBasicMaterial({color:0xffa03b});const visor=new THREE.Mesh(new THREE.BoxGeometry(.52,.075,.04),visorMat);visor.position.set(0,3.57,.49);golem.add(visor);
+const chestPlate=new THREE.Mesh(new THREE.CylinderGeometry(.66,.72,.12,10),heroArmorMat);chestPlate.rotation.x=Math.PI/2;chestPlate.position.set(0,2.36,.67);golem.add(chestPlate);
+const chestRing=new THREE.Mesh(new THREE.TorusGeometry(.43,.038,10,54),new THREE.MeshBasicMaterial({color:0xff8734,transparent:true,opacity:.7,blending:THREE.AdditiveBlending}));chestRing.position.set(0,2.36,.75);golem.add(chestRing);
+
+
+
+const torchFX=[];for(const [x,z] of [[3.25,-5.08],[7.75,-5.08],[-7.55,-3.95]]){const g=new THREE.Group();g.position.set(x,1.05,z);const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.13,.18,.18,8),pedTrimMat);g.add(bowl);const flame=new THREE.Mesh(new THREE.IcosahedronGeometry(.18,2),new THREE.MeshBasicMaterial({color:0xff8b2b,transparent:true,opacity:.8,blending:THREE.AdditiveBlending}));flame.position.y=.28;g.add(flame);const light=new THREE.PointLight(0xff7a2b,3.2,4.5,2);light.position.y=.35;g.add(light);scene.add(g);torchFX.push({g,flame,light});}
+const blastCloud=[];for(let i=0;i<12;i++){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),new THREE.MeshBasicMaterial({color:i%3===0?0xfff0a0:(i%2?0xffa127:0xff5715),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));m.position.copy(explosionOrigin);scene.add(m);blastCloud.push({m,dir:new THREE.Vector3(randRange(-1,1),randRange(-.5,1),randRange(-1,1)).normalize(),phase:rand()});}
 // Layered ice cores and animated frost motes.
-const iceCoreMat=new THREE.MeshBasicMaterial({color:0xd7f7ff,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false});
+const iceCoreMat=new THREE.MeshBasicMaterial({color:0xbfeaff,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false});
 shardData.forEach(d=>{const c=new THREE.Mesh(shardGeom,iceCoreMat);c.scale.set(.46,.46,.78);d.m.add(c);d.core=c;});
 const frostGeom=new THREE.BufferGeometry(),frostBase=[];for(let i=0;i<190;i++)frostBase.push({o:new THREE.Vector3(randRange(-.8,.8),randRange(-.65,.65),randRange(-.55,.55)),p:rand()});frostGeom.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(190*3),3));const frostMat=new THREE.PointsMaterial({color:0xdaf8ff,size:.055,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const frost=new THREE.Points(frostGeom,frostMat);scene.add(frost);
 
@@ -391,6 +417,15 @@ const aimCurve=new THREE.CatmullRomCurve3([
   new THREE.Vector3(2.6,1.25,-3.35)
 ],false,'catmullrom',.55);
 
+
+const postTarget=new THREE.WebGLRenderTarget(Math.max(1,innerWidth*renderer.getPixelRatio()),Math.max(1,innerHeight*renderer.getPixelRatio()),{type:THREE.HalfFloatType,depthBuffer:true});
+postTarget.texture.colorSpace=THREE.SRGBColorSpace;
+const postScene=new THREE.Scene(),postCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+const postVertex='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}';
+const postFrag='precision highp float;uniform sampler2D tScene;uniform vec2 uResolution;uniform float uTime;varying vec2 vUv;float lum(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}float hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}void main(){vec2 px=1.0/uResolution;vec3 c=texture2D(tScene,vUv).rgb;vec3 b=vec3(0.0);vec2 o1=px*2.2;vec2 o2=px*4.5;vec3 s1=texture2D(tScene,vUv+vec2(o1.x,0)).rgb;vec3 s2=texture2D(tScene,vUv-vec2(o1.x,0)).rgb;vec3 s3=texture2D(tScene,vUv+vec2(0,o1.y)).rgb;vec3 s4=texture2D(tScene,vUv-vec2(0,o1.y)).rgb;vec3 s5=texture2D(tScene,vUv+o2).rgb;vec3 s6=texture2D(tScene,vUv-o2).rgb;vec3 s7=texture2D(tScene,vUv+vec2(o2.x,-o2.y)).rgb;vec3 s8=texture2D(tScene,vUv+vec2(-o2.x,o2.y)).rgb;b=(s1+s2+s3+s4)*.13+(s5+s6+s7+s8)*.12;float m=smoothstep(.62,1.25,lum(b));c+=b*m*.52;float l=lum(c);c=mix(vec3(l),c,1.13);c=pow(max(c,0.0),vec3(.94));c.r+=smoothstep(.6,1.3,l)*.035;c.b+=smoothstep(.05,.42,.5-l)*.018;float vig=1.0-smoothstep(.32,.79,distance(vUv,vec2(.5)));c*=mix(.76,1.0,vig);c+=(hash21(vUv*uResolution+uTime*17.0)-.5)*.018;gl_FragColor=vec4(c,1.0);}';
+const postMat=new THREE.ShaderMaterial({uniforms:{tScene:{value:postTarget.texture},uResolution:{value:new THREE.Vector2(postTarget.width,postTarget.height)},uTime:{value:0}},vertexShader:postVertex,fragmentShader:postFrag,depthWrite:false,depthTest:false,toneMapped:false});
+const postQuad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),postMat);postScene.add(postQuad);
+
 function updateCinematic(t){
   const u=clamp01(t/20), cp=smooth(.35,4.1,t), lp=smooth(3.3,5.15,t)*(1-smooth(10.6,12.6,t)), cond=smooth(6.7,8,t), reveal=smooth(13.1,15.2,t);
   banners.forEach((b,i)=>b.material.uniforms.uTime.value=t+i*.7);
@@ -401,7 +436,8 @@ function updateCinematic(t){
   windGlowTubes.forEach((w,i)=>{w.material.opacity=.12*lp;w.rotation.y=t*.05*(i%2?1:-1);});
   moltenCracks.forEach((m,i)=>m.material.opacity=(.22+.12*Math.sin(t*4+i))*cond);chestRune.material.opacity=.45+.28*cond;
   const fq=frostGeom.attributes.position, fly=smooth(8.8,10.65,t), head=iceOrigin.clone().lerp(iceTarget,fly);for(let i=0;i<frostBase.length;i++){const d=frostBase[i],q=(d.p+t*.22)%1;fq.setXYZ(i,head.x+d.o.x*(1-q),head.y+d.o.y*(1-q),head.z+d.o.z*(1-q));}fq.needsUpdate=true;frostMat.opacity=.55*cond*(1-smooth(11.3,12,t));
-  const dt=t-11.05, blast=dt>0?Math.exp(-dt*2.6):0;blastRays.forEach((r,i)=>r.material.opacity=.68*blast*(1-i/blastRays.length*.3));blastCore.scale.setScalar(.3+Math.max(0,dt)*2.5);blastCore.material.opacity=dt>0?.72*Math.exp(-dt*4.4):0;
+  torchFX.forEach((q,i)=>{q.flame.scale.set(.82+Math.sin(t*8+i)*.08,1.15+Math.sin(t*10+i)*.16,.82);q.light.intensity=2.7+.65*Math.sin(t*9+i);});
+  const dt=t-11.05, blast=dt>0?Math.exp(-dt*2.6):0;blastRays.forEach((r,i)=>r.material.opacity=.68*blast*(1-i/blastRays.length*.3));blastCore.scale.setScalar(.3+Math.max(0,dt)*2.5);blastCore.material.opacity=dt>0?.72*Math.exp(-dt*4.4):0;blastCloud.forEach((q,i)=>{if(dt<=0){q.m.material.opacity=0;return;}const tt=Math.max(0,dt-q.phase*.08);q.m.position.copy(explosionOrigin).addScaledVector(q.dir,tt*(1.5+i*.04));q.m.scale.setScalar(.16+tt*(1.6+i*.08));q.m.material.opacity=.42*Math.exp(-tt*(2.5+q.phase));});
   waterFX.scale.setScalar(reveal);waterFX.visible=BUILD_STAGE>=6;waterFX.children.forEach((o,i)=>{if(o.material?.opacity!==undefined)o.material.opacity=.32*reveal*(.8+.2*Math.sin(t*2+i));o.rotation.z+=0.0015*(i+1);});for(let i=0;i<26;i++){const a=i/26*Math.PI*2+t*(.45+(i%4)*.05),r=.48+.08*Math.sin(i*2.4+t);wd.position.set(Math.cos(a)*r,.15*Math.sin(a*2+t)+.05,Math.sin(a)*r);wd.scale.setScalar(reveal*(.7+.3*Math.sin(i+t)));wd.updateMatrix();waterDrops.setMatrixAt(i,wd.matrix);}waterDrops.instanceMatrix.needsUpdate=true;
   fireFX.scale.setScalar(reveal);fireFX.visible=BUILD_STAGE>=6;fireLobes.forEach((m,i)=>{const a=i/fireLobes.length*Math.PI*2+t*.35;m.position.set(Math.cos(a)*.18,.06+i*.055+Math.sin(t*3+i)*.06,Math.sin(a)*.18);m.scale.set(.7,.9+i*.08,.7);m.material.opacity=.13*reveal;});const fs=fireSparkGeom.attributes.position;for(let i=0;i<fireSparkBase.length;i++){const d=fireSparkBase[i],yy=(d.y+t*.22*d.s)%1.25;fs.setXYZ(i,Math.cos(d.a+t*.5)*d.r,yy-.1,Math.sin(d.a+t*.5)*d.r);}fs.needsUpdate=true;fireSparkMat.opacity=.8*reveal;
   iceFX.scale.setScalar(reveal);iceFX.visible=BUILD_STAGE>=6;iceCracks.forEach((m,i)=>m.material.opacity=(.45+.35*Math.sin(t*.8+i))*reveal);
@@ -420,7 +456,7 @@ function updateCircle(t){
   const p=smooth(.4,4.1,t);
   circleStrokes.forEach((s,i)=>{const local=clamp01((p*circleStrokes.length-i)/2.2);s.geom.setDrawRange(0,Math.max(0,Math.floor(s.count*local)));});
   runes.forEach((s,i)=>{const local=clamp01((p*1.25-i/runes.length)*3.1);s.geom.setDrawRange(0,Math.max(0,Math.floor(s.count*local)));});
-  circleGlowMat.opacity=.16*p+.055*Math.sin(t*5)*p; sigilFill.material.opacity=.035*p; ringGlowMeshes.forEach((m,i)=>m.material.opacity=(.12+(i===3?.08:0))*p*(.88+.12*Math.sin(t*3+i)));circleLightA.intensity=34*p*(.88+.12*Math.sin(t*3.1)); circleLightB.intensity=25*p*(.88+.12*Math.cos(t*2.6));circleFloorLights.forEach((l,i)=>l.intensity=(i%2?14:18)*p);
+  circleGlowMat.opacity=.16*p+.055*Math.sin(t*5)*p; sigilFill.material.opacity=.035*p; ringGlowMeshes.forEach((m,i)=>m.material.opacity=(.12+(i===3?.08:0))*p*(.88+.12*Math.sin(t*3+i)));circleLightA.intensity=25*p*(.88+.12*Math.sin(t*3.1)); circleLightB.intensity=19*p*(.88+.12*Math.cos(t*2.6));circleFloorLights.forEach((l,i)=>l.intensity=(i%2?9:12)*p);
   circleGroup.children.forEach(o=>{if(o.material && o.material!==circleGlowMat && o.geometry?.type==='CylinderGeometry')o.material.opacity=.015+.045*p*(.5+.5*Math.sin(t*2+o.position.x));});
 }
 
@@ -458,7 +494,7 @@ function updateExplosion(t){
   const dt=t-11.05; const active=dt>0; sparkMat.opacity=active?clamp01(1-dt/2.1):0; flash.intensity=active?105*Math.exp(-dt*4.8):0;fireballs.forEach((m,i)=>{if(!active){m.material.opacity=0;return;}const tt=Math.max(0,dt-i*.045);m.position.copy(explosionOrigin).add(new THREE.Vector3(Math.sin(i*2.1)*.16,Math.cos(i)*.12,Math.cos(i*1.7)*.16));m.scale.setScalar(.25+tt*(2.0+i*.16));m.material.opacity=.5*Math.exp(-tt*(2.0+i*.15));});
   const a=sparkGeom.attributes.position;for(let i=0;i<sparkCount;i++){if(!active){a.setXYZ(i,explosionOrigin.x,explosionOrigin.y,explosionOrigin.z);continue;}const v=sparkVel[i];a.setXYZ(i,explosionOrigin.x+v.x*dt,explosionOrigin.y+v.y*dt-2.2*dt*dt,explosionOrigin.z+v.z*dt);}a.needsUpdate=true;
   for(let i=0;i<debrisCount;i++){const d=debrisData[i];const tt=Math.max(0,dt);debrisDummy.position.set(explosionOrigin.x+d.v.x*tt,explosionOrigin.y+d.v.y*tt-2.7*tt*tt,explosionOrigin.z+d.v.z*tt);debrisDummy.rotation.set(d.w.x*tt,d.w.y*tt,d.w.z*tt);debrisDummy.scale.setScalar(active?d.s:0);debrisDummy.updateMatrix();debris.setMatrixAt(i,debrisDummy.matrix);}debris.instanceMatrix.needsUpdate=true;
-  smoke.forEach((s,i)=>{const tt=dt-s.delay;if(tt<0){s.m.material.opacity=0;return;}s.m.position.copy(explosionOrigin).add(s.o).add(new THREE.Vector3(Math.sin(i)*tt*.28,tt*.92,Math.cos(i*1.7)*tt*.23));const sc=s.s*(.2+tt*1.45);s.m.scale.set(sc*1.08,sc*.88,sc);s.m.rotation.y+=s.spin*.015;s.m.rotation.x+=s.spin*.008;s.m.material.opacity=.32*clamp01(1-tt/2.6);});
+  smoke.forEach((s,i)=>{const tt=dt-s.delay;if(tt<0){s.m.material.opacity=0;return;}s.m.position.copy(explosionOrigin).add(s.o).add(new THREE.Vector3(Math.sin(i)*tt*.28,tt*.92,Math.cos(i*1.7)*tt*.23));const sc=s.s*(.2+tt*1.45);s.m.scale.set(sc*1.08,sc*.88,sc);s.m.rotation.y+=s.spin*.015;s.m.rotation.x+=s.spin*.008;s.m.material.opacity=.48*clamp01(1-tt/2.8);});
   // target remains readable through initial blast, then breaks away
   golem.visible=BUILD_STAGE>=4 && !(t>12.35);
 }
@@ -476,13 +512,13 @@ function frame(now){
   updateCamera(t);updateCircle(t);updateLeaves(t);updateIce(t);updateExplosion(t);updateSpheres(t);updateCinematic(t);
   stars.rotation.y=t*.004;
   if(document.body.classList.contains('debug'))hud.textContent=`Spell VFX Test Range • stage ${BUILD_STAGE}/6 • t=${t.toFixed(2)}s • seed ${SEED}`;
-  renderer.render(scene,camera);
+  postMat.uniforms.uTime.value=t;renderer.setRenderTarget(postTarget);renderer.render(scene,camera);renderer.setRenderTarget(null);renderer.render(postScene,postCamera);
 }
 requestAnimationFrame(frame);
 
 window.__BUILD_LOG={targetWallTime:'about one hour',actualWallTime:'not continuously measurable in this tool runtime; work was completed across multiple chat turns, so no fabricated elapsed-time claim is made',tools:['ChatGPT file tools','GitHub connector','Remote Desktop Commander','headless Google Chrome','ffmpeg'],corrections:['Recovered from a local HTTP port collision by moving the preview server to port 9876','Fixed material-sphere reveal by driving alpha through a GLSL uReveal uniform instead of relying on ShaderMaterial.opacity','Raised environment exposure and spell-local lighting after the first headless render was too dark','Adjusted camera framing, orb scale, leaf emissive response, ice fade, and blast readability after visual validation','AAA cinematic pass: rebuilt floor as wet bevelled radial flagstones, added puddles, moss and fallen leaves, procedural moon/Milky Way/clouds/fortress, detailed masonry/banners/ivy, layered magic-circle motes, brighter leaf wind shells, golem armor/runes/molten cracks, layered ice/frost, blast streaks/hot core, ornate pedestal trim/icons, secondary water/fire/ice FX, and a cinematic spline camera']};
 console.info('Spell VFX build log',window.__BUILD_LOG);
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const pr=renderer.getPixelRatio();postTarget.setSize(Math.max(1,innerWidth*pr),Math.max(1,innerHeight*pr));postMat.uniforms.uResolution.value.set(postTarget.width,postTarget.height);});
 </script>
 </body>
 </html>
