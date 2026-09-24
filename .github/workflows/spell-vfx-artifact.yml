@@ -1,0 +1,17 @@
+name: Package Spell VFX Deliverables
+on:
+  push:
+    branches:
+      - spell-vfx-test-range-20260924
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload complete deliverables
+        uses: actions/upload-artifact@v4
+        with:
+          name: spell-vfx-test-range-deliverables
+          path: spell-vfx-test-range/
+          if-no-files-found: error
+          retention-days: 30
