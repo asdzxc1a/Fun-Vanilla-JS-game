@@ -211,7 +211,7 @@ const shardMat=new THREE.MeshPhysicalMaterial({color:0x9feaff,emissive:0x1b9cff,
 for(let i=0;i<12;i++){const m=new THREE.Mesh(shardGeom,shardMat.clone());m.castShadow=true;shardGroup.add(m);const ang=(i-5.5)*.085;shardData.push({m,offset:new THREE.Vector3(randRange(-.45,.45),randRange(-.75,.75),randRange(-.35,.35)),delay:i*.055,ang});}
 const mistGeom=new THREE.BufferGeometry();const mistBase=[];for(let i=0;i<130;i++)mistBase.push(new THREE.Vector3(randRange(-1.1,1.1),randRange(-.8,.8),randRange(-.8,.8)));mistGeom.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(130*3),3));
 const mistMat=new THREE.PointsMaterial({color:0xc8f4ff,size:.12,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const mist=new THREE.Points(mistGeom,mistMat);scene.add(mist);
-const volleyLight=new THREE.PointLight(0x62ccff,0,8,2);volleyLight.position.copy(iceOrigin);scene.add(volleyLight);
+const volleyLight=new THREE.PointLight(0x62ccff,0,8,2);volleyLight.position.set(-.15,3.35,.7);scene.add(volleyLight);
 const shardTrails=[];for(let i=0;i<12;i++){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(6),3));const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:0x8fe9ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));scene.add(l);shardTrails.push(l);}
 const iceOrigin=new THREE.Vector3(-.15,3.35,.7), iceTarget=new THREE.Vector3(5.05,2.7,-.62);
 
