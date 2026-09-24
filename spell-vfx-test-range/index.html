@@ -63,12 +63,13 @@ scene.add(rim);
 // ----- Night sky -----
 const starGeom = new THREE.BufferGeometry();
 const starPos=[];
-for(let i=0;i<2200;i++){
-  const th=randRange(0,Math.PI*2), r=randRange(25,44), y=randRange(5.5,18.0);
-  starPos.push(Math.cos(th)*r, y, Math.sin(th)*r);
+for(let i=0;i<1600;i++){
+  const th=randRange(0,Math.PI*2), u=randRange(0.08,0.98), r=randRange(26,45);
+  const ph=Math.acos(THREE.MathUtils.lerp(0.05,0.95,u));
+  starPos.push(Math.cos(th)*Math.sin(ph)*r, Math.cos(ph)*r+8, Math.sin(th)*Math.sin(ph)*r);
 }
 starGeom.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));
-const stars=new THREE.Points(starGeom,new THREE.PointsMaterial({color:0xd8e6ff,size:.085,sizeAttenuation:true,transparent:true,opacity:.95,depthWrite:false,fog:false}));
+const stars=new THREE.Points(starGeom,new THREE.PointsMaterial({color:0xbfd8ff,size:.055,sizeAttenuation:true,transparent:true,opacity:.9,depthWrite:false}));
 scene.add(stars);
 
 // ----- Circular stone arena -----
@@ -98,7 +99,7 @@ for(let i=0;i<46;i++){
 }
 
 // ----- Ruined arch / walls -----
-const ruinMat=new THREE.MeshStandardMaterial({color:0x333946,roughness:.94,emissive:0x090d15,emissiveIntensity:.28});
+const ruinMat=new THREE.MeshStandardMaterial({color:0x333946,roughness:.94});
 function addBlock(x,y,z,sx,sy,sz,ry=0){ const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),ruinMat);m.position.set(x,y,z);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;scene.add(m);return m; }
 addBlock(7.5,1.6,-5.7,1.25,3.2,1.25,.08); addBlock(3.4,1.8,-6.0,1.15,3.6,1.15,-.1); addBlock(5.45,3.45,-5.9,5.1,.7,1.05,.02);
 addBlock(-7.5,1.1,-4.5,1.15,2.2,1.15,.2); addBlock(-8.7,.5,-2.7,2.6,1.0,1.0,-.45);
@@ -113,8 +114,8 @@ for(let k=0;k<7;k++){
 }
 
 // Distant low-poly mountain silhouettes, still fully procedural.
-const mountainMat=new THREE.MeshStandardMaterial({color:0x09121f,roughness:1});
-for(let i=0;i<15;i++){const a=THREE.MathUtils.lerp(-2.85,-.25,i/14);const r=randRange(26,32);const h=randRange(2.6,5.4);const m=new THREE.Mesh(new THREE.ConeGeometry(randRange(3.0,5.8),h,6),mountainMat);m.position.set(Math.cos(a)*r,h*.42-1.9,Math.sin(a)*r);m.rotation.y=rand()*Math.PI;m.scale.x=randRange(.85,1.5);scene.add(m);}
+const mountainMat=new THREE.MeshStandardMaterial({color:0x0a1220,roughness:1});
+for(let i=0;i<18;i++){const a=THREE.MathUtils.lerp(-2.85,-.25,i/17);const r=randRange(23,30);const h=randRange(3.5,8.0);const m=new THREE.Mesh(new THREE.ConeGeometry(randRange(2.8,5.4),h,5),mountainMat);m.position.set(Math.cos(a)*r,h*.45-1.8,Math.sin(a)*r);m.rotation.y=rand()*Math.PI;m.scale.x=randRange(.7,1.5);scene.add(m);}
 
 // ============================================================
 // STAGE 2 — PROCEDURAL SUMMONING CIRCLE
@@ -192,7 +193,7 @@ for(let k=0;k<4;k++){const pts=[];for(let i=0;i<70;i++){const q=i/69,y=.45+q*4.1
 // STAGE 4 — ICE VOLLEY + STONE TARGET
 // ============================================================
 const golem=new THREE.Group();golem.position.set(5.2,.42,-1.0);golem.rotation.y=-.08;scene.add(golem);
-const stoneMat=new THREE.MeshStandardMaterial({color:0x92918b,roughness:.84,metalness:.025,emissive:0x10151b,emissiveIntensity:.28});
+const stoneMat=new THREE.MeshStandardMaterial({color:0x8c8c88,roughness:.86,metalness:.025});
 function rock(geo,pos,scale,rot=[0,0,0]){const m=new THREE.Mesh(geo,stoneMat);m.position.set(...pos);m.scale.set(...scale);m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;golem.add(m);return m;}
 const dode=new THREE.DodecahedronGeometry(1,0), cyl=new THREE.CylinderGeometry(.65,.72,1.5,7);
 rock(dode,[0,2.25,0],[1.05,1.35,.72],[0,.1,.05]);rock(dode,[0,3.55,0],[.55,.5,.5],[0,.1,0]);
@@ -243,12 +244,12 @@ float fbm(vec3 p){float f=0.,a=.5;for(int i=0;i<5;i++){f+=a*noise(p);p*=2.02;a*=
 `;
 const sphereVertex=`varying vec3 vPos;varying vec3 vN;uniform float uTime;${noiseGLSL}void main(){vN=normalize(normalMatrix*normal);vPos=position;float n=fbm(normalize(position)*3.2+vec3(0.,uTime*.35,0.));vec3 p=position+normal*(n-.5)*.08;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`;
 const waterFrag=`precision highp float;varying vec3 vPos;varying vec3 vN;uniform float uTime;uniform float uReveal;${noiseGLSL}void main(){vec3 N=normalize(vN);float fres=pow(1.-abs(dot(N,vec3(0.,0.,1.))),2.4);float n=fbm(vPos*4.+vec3(uTime*.15,uTime*.38,0.));float bands=.5+.5*sin(vPos.y*14.+n*8.-uTime*2.2);vec2 warp=N.xy*(.12+.12*n);vec3 refr=vec3(.02+.2*warp.x,.14+.36*bands,.42+.34*n+.18*warp.y);vec3 c=mix(refr,vec3(.14,.94,1.),fres*.72);gl_FragColor=vec4(c,(.72+fres*.25)*uReveal);}`;
-const fireFrag=`precision highp float;varying vec3 vPos;varying vec3 vN;uniform float uTime;uniform float uReveal;${noiseGLSL}void main(){float n=fbm(vPos*3.8+vec3(0.,-uTime*1.25,0.));float flame=smoothstep(.16,.88,n+vPos.y*.28+.12*sin(vPos.x*8.+uTime*3.));vec3 c=mix(vec3(.95,.035,.0),vec3(1.,.95,.16),flame);float edge=pow(1.-abs(dot(normalize(vN),vec3(0.,0.,1.))),1.7);gl_FragColor=vec4(c*(1.08+flame*.58),(.8+edge*.16)*uReveal);}`;
+const fireFrag=`precision highp float;varying vec3 vPos;varying vec3 vN;uniform float uTime;uniform float uReveal;${noiseGLSL}void main(){float n=fbm(vPos*3.8+vec3(0.,-uTime*1.25,0.));float flame=smoothstep(.16,.88,n+vPos.y*.28+.12*sin(vPos.x*8.+uTime*3.));vec3 c=mix(vec3(.95,.035,.0),vec3(1.,.95,.16),flame);float edge=pow(1.-abs(dot(normalize(vN),vec3(0.,0.,1.))),1.7);gl_FragColor=vec4(c*(1.4+flame*.9),(.82+edge*.16)*uReveal);}`;
 const iceFrag=`precision highp float;varying vec3 vPos;varying vec3 vN;uniform float uTime;uniform float uReveal;${noiseGLSL}void main(){vec3 N=normalize(vN);float fres=pow(1.-abs(dot(N,vec3(0.,0.,1.))),2.2);float a=abs(fract((vPos.x+fbm(vPos*5.))*5.)-.5);float b=abs(fract((vPos.y+noise(vPos*7.))*6.)-.5);float cracks=1.-smoothstep(.025,.11,min(a,b));float frost=fbm(vPos*6.);vec3 c=mix(vec3(.08,.35,.65),vec3(.82,.98,1.),fres*.8+cracks*.9+frost*.15);gl_FragColor=vec4(c,(.42+fres*.42+cracks*.24)*uReveal);}`;
 const sphereGeom=new THREE.SphereGeometry(.68,48,32);
-function shaderSphere(pos,frag,scale=new THREE.Vector3(1,1,1)){const mat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uReveal:{value:0}},vertexShader:sphereVertex,fragmentShader:frag,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});const m=new THREE.Mesh(sphereGeom,mat);m.position.copy(pos).add(new THREE.Vector3(0,2.35,0));m.scale.copy(scale);scene.add(m);return m;}
+function shaderSphere(pos,frag,scale=new THREE.Vector3(1,1,1)){const mat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uReveal:{value:0}},vertexShader:sphereVertex,fragmentShader:frag,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});const m=new THREE.Mesh(sphereGeom,mat);m.position.copy(pos).add(new THREE.Vector3(0,2.05,0));m.scale.copy(scale);scene.add(m);return m;}
 const waterSphere=shaderSphere(pedPos[0],waterFrag,new THREE.Vector3(1,1,1));const fireSphere=shaderSphere(pedPos[1],fireFrag,new THREE.Vector3(.86,1.16,.86));const iceSphere=shaderSphere(pedPos[2],iceFrag,new THREE.Vector3(1,1,1));
-const waterLight=new THREE.PointLight(0x23a9ff,0,5,2),fireLight=new THREE.PointLight(0xff651c,0,5,2),iceLight=new THREE.PointLight(0x9ce8ff,0,5,2);[waterLight,fireLight,iceLight].forEach((l,i)=>{l.position.copy(pedPos[i]).add(new THREE.Vector3(0,2.45,0));scene.add(l);});
+const waterLight=new THREE.PointLight(0x23a9ff,0,5,2),fireLight=new THREE.PointLight(0xff651c,0,5,2),iceLight=new THREE.PointLight(0x9ce8ff,0,5,2);[waterLight,fireLight,iceLight].forEach((l,i)=>{l.position.copy(pedPos[i]).add(new THREE.Vector3(0,2.15,0));scene.add(l);});
 
 // subtle orb halos (pure geometry, no texture)
 for(const [m,c] of [[waterSphere,0x24d8ff],[fireSphere,0xff751e],[iceSphere,0xb9f2ff]]){const halo=new THREE.Mesh(new THREE.SphereGeometry(.82,24,16),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.08,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide}));halo.position.copy(m.position);scene.add(halo);m.userData.halo=halo;}
@@ -303,7 +304,7 @@ function updateIce(t){
     d.m.position.lerpVectors(form,impact,lp); const fade=1-smooth(11.45,12.25,t); const s=cond*THREE.MathUtils.lerp(.25,1.25,hang)*fade;d.m.scale.setScalar(s);
     d.m.lookAt(impact.clone().add(new THREE.Vector3(1.2,0,0)));d.m.rotateZ(Math.PI/2);const trail=shardTrails[i],pa=trail.geometry.attributes.position;const tail=d.m.position.clone().lerp(form,.28);pa.setXYZ(0,tail.x,tail.y,tail.z);pa.setXYZ(1,d.m.position.x,d.m.position.y,d.m.position.z);pa.needsUpdate=true;trail.material.opacity=.6*lp*fade;
   });
-  const hit=smooth(10.9,11.25,t);golem.rotation.z=-.05*hit;const vq=smooth(8.8,10.65,t);volleyLight.position.lerpVectors(iceOrigin,iceTarget,vq);volleyLight.intensity=22*cond*(1-smooth(11.2,12.2,t));golemWarm.intensity=5.5*(1-smooth(11.0,12.0,t));
+  const hit=smooth(10.9,11.25,t);golem.rotation.z=-.05*hit;volleyLight.intensity=14*cond*(1-smooth(11.2,12.2,t));golemWarm.intensity=5.5*(1-smooth(11.0,12.0,t));
 }
 
 function updateExplosion(t){
