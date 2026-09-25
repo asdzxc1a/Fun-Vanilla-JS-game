@@ -23,7 +23,8 @@ The requested target wall time was about one hour. The actual cumulative wall ti
 5. Leaf emissive response, spiral trails, ice streak trails, explosion flash/fireballs, and golem readability were strengthened after screenshot review.
 6. An ice-volley point light referenced iceOrigin before that constant was initialized; initialization order was corrected.
 7. An initial timelapse shell command hit a zsh glob edge case; frames were regenerated with an explicit ordered render script.
-8. Final timelapse frames were inspected and assembled at exactly 2 frames per second.
+8. Final source refinements adjusted stars, ruin visibility, golem material response, mountains, orb presentation, and camera readability.
+9. The final eight stage screenshots were regenerated from the final source and assembled at exactly 2 frames per second.
 
 ## Runtime notes
 
@@ -31,4 +32,4 @@ The requested target wall time was about one hour. The actual cumulative wall ti
 - window.__replay() restarts the 20-second sequence.
 - window.__BUILD_LOG exposes a compact runtime copy of this build log.
 - No image textures, models, audio, or effect libraries are used by the page. Three.js core is loaded from a CDN.
-- 60 fps is the performance target; the scene was designed with instancing and bounded particle counts, but no formal cross-hardware 60 fps certification is claimed.
+- 60 fps is the performance target; the scene uses instancing and bounded particle counts, but no formal cross-hardware 60 fps certification is claimed.
