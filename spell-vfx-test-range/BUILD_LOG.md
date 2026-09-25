@@ -33,3 +33,15 @@ The requested target wall time was about one hour. The actual cumulative wall ti
 - window.__BUILD_LOG exposes a compact runtime copy of this build log.
 - No image textures, models, audio, or effect libraries are used by the page. Three.js core is loaded from a CDN.
 - 60 fps is the performance target; the scene uses instancing and bounded particle counts, but no formal cross-hardware 60 fps certification is claimed.
+
+## 2026-09-24 cinematic quality upgrade
+
+- Rebuilt the arena surface into bevelled wet radial flagstones with procedural puddles, moss, and fallen leaves.
+- Added a procedural moon, Milky Way density band, atmospheric cloud forms, distant fortress/ridge silhouettes, denser masonry, ivy, banners, and torch lighting.
+- Replaced the prototype golem anatomy with a higher-detail articulated stone construct, armor plates, visor, chest rune, and molten crack detail.
+- Added a manual core-Three.js post pass with bright-pass bloom approximation, color grading, shadow lift, vignette, and subtle procedural grain.
+- Upgraded ice to layered translucent shards with internal emissive cores and frost motes.
+- Upgraded the blast with radial streaks, hotter layered fire volumes, faster smoke onset, and brighter flash response.
+- Rebuilt the pedestal presentation with bronze trim, glowing elemental icons, a stronger water spiral, vertical multi-lobe flame, and denser ice crack structure.
+- Added a camera-locked moon composition and reworked the cinematic spline camera for stronger wide hero framing.
+- Regenerated all eight build frames and the 2 fps timelapse after the quality pass.
